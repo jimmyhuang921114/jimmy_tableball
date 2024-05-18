@@ -1,4 +1,4 @@
-
+ 
 from matplotlib.patches import Polygon as MatplotlibPolygon
 import random
 import math
@@ -98,44 +98,15 @@ class generateball():
 
 #需要母球及其他球位置及顏色編號
 
-def cal_score(distance,angle,obstancle):
-    print(distance,angle,obstancle)
-    angles=[]
-    distances=[]
-    obstancles=[]
-    score = (obstancle * 150) + (angle * 1.5) + (distance * 1)
+def cal_score(distance,angle,cue_objobs,obj_holeobs):
+    # print("score",distance,angle,cue_objobs,obj_holeobs)
+    score = ((angle * -22) + (distance * -1) + (obj_holeobs*-4000))
+    if angle<0:
+        score=abs(score)
+    elif cue_objobs>0:
+        score=abs(score)
     return score
-        # 
-        
-            #calculate angle distance
-            #append in to list
-            #calculate the score 
-            #print score
-        # for i in range(0,obstancle):
-        #     score=(-angle[i]*1273 + 2000) + (- distance[i] + 2000) + (-obstancle[i]*1000 + 2000)
-        #     sum+=score
-        # print(sum,obstancle)
-        # return sum
-        
-    # elif n == 1:
-    #     n1ton2 = math.sqrt(abs(n1ton2[0])**2+abs(n1ton2[1])**2)
-    #     n2tohole = math.sqrt(abs(toholevector[0])**2+abs(toholevector[1])**2)
-    #     angle0 = math.acos((cueton1[0]*n1ton2[0]+cueton1[1]*n1ton2[1])/(cueton1*n1ton2))
-    #     angle1 = math.acos((n1ton2[0]*toholevector[0]+n1ton2[1]*toholevector[1])/(n2tohole*n1ton2))      
-    #     score = (-angle0*1273 + 2000)/2 + (-angle1*1273 + 2000)/2 + (- (cueton1+n1ton2+n2tohole) + 2000)  + (-n*1000 + 2000)
 
-    # elif n == 2:
-    #     cuefinalvector = [cueton1[0]-n1ton2[0],cueton1[1]-n1ton2[1]]
-    #     cuetoiL = math.sqrt(abs(cueton1[0])**2+abs(cueton1[1])**2)
-    #     itok2L = math.sqrt(abs(n1ton2[0])**2+abs(n1ton2[1])**2)
-    #     k2tok1L = math.sqrt(abs(k2tok1vector[0])**2+abs(k2tok1vector[1])**2)
-    #     k1toholeL = math.sqrt(abs(toholevector[0])**2+abs(toholevector[1])**2)
-    #     angle0 = math.acos((cueton1[0]*n1ton2[0]+cueton1[1]*n1ton2[1])/(cuetoiL*itok2L))
-    #     angle1 = math.acos((n1ton2[0]*k2tok1vector[0]+n1ton2[1]*k2tok1vector[1])/(k2tok1L*itok2L))
-    #     angle2 = math.acos((k2tok1vector[0]*toholevector[0]+k2tok1vector[1]*toholevector[1])/(k1toholeL*k2tok1L))
-    #     score = (-angle0*1273 + 2000)/3 + (-angle1*1273 + 2000)/3 + (-angle2*1273 + 2000)/3 + (- (cuetoiL+itok2L+k2tok1L+k1toholeL) + 2000) + (-n*1000 + 2000)
-    
-    # return score,cuefinalvector,cue,cueton1, n1, n1ton2, n2 ,toholevector,n
 def generate(ballcount):
     ballnumber=[]
     ballnumber=random.sample(range(1,9),ballcount)
@@ -180,15 +151,11 @@ def vector_angle(n1x,n1y,n2x,n2y,n3x,n3y):
     deg = math.degrees(rad)
     return deg
 def point_to_line_distance(px, py, x1, y1, x2, y2, radius,i, j,value):
-    # 计算方向向量 d
     dx = x2 - x1
     dy = y2 - y1
-    
     apx = px - x1
     apy = py - y1
-
     d_mag_squared = dx**2 + dy**2
-
     if d_mag_squared == 0:
         dist = math.sqrt(apx**2 + apy**2)
         closest_point = (x1, y1)
@@ -204,14 +171,27 @@ def point_to_line_distance(px, py, x1, y1, x2, y2, radius,i, j,value):
 
             qx = x1 + t * dx
             qy = y1 + t * dy
-            closest_point = (qx, qy)
             dist = math.sqrt((px - qx)**2 + (py - qy)**2)
     #pygame.draw.line(screen,BLACK,closest_point,(px,py),3)
     # 判断是否碰撞
-    if dist < radius:
+    if dist <= radius:
         value+=1
     #print(i,ballnumber[j])
     return value
+def find_min_negative_integer_in_nested_list(lst):
+    min_negative = None
+    min_position1 = None
+    min_position2=None
+
+    for i, sublist in enumerate(lst):
+        for j, value in enumerate(sublist):
+            if isinstance(value, (int, float)) and value < 0:
+                if min_negative is None or value > min_negative:
+                    min_negative = value
+                    min_position1,min_position2= (i, j)
+    
+    return min_negative, min_position1,min_position2
+
 def text():
     font = pygame.font.SysFont("Arial", 20)
     balltext=font.render("the ball exist:",True,BLACK)
@@ -229,63 +209,80 @@ def text():
         txtexistball = font.render((colorname[i]), True, BLACK)
         screen.blit(txtexistball, (700, 50+20*i))  
 def calculate_aim_point(ball_x, ball_y, target_x, target_y, ball_diameter):
-    # 计算向量
     vector_x = target_x - ball_x
     vector_y = target_y - ball_y
-    # 计算向量长度
     length = math.sqrt(vector_x**2 + vector_y**2)
-    # 标准化向量
     unit_vector_x = vector_x / length
     unit_vector_y = vector_y / length
-    # 计算瞄准点
     aim_distance = 2 * ball_diameter
     aim_point_x = ball_x - unit_vector_x * aim_distance
     aim_point_y = ball_y - unit_vector_y * aim_distance
     return aim_point_x, aim_point_y
 
+# def edge_detect(rectrange,ballx,bally):
+#     if rectrange.collidepoint(ballx, bally):
+#         print("點在矩形內")
+#         return True
+#     else:
+#         print("點在矩形外")
+#         return False
+    
 def main(cuex,cuey,objx,objy,):
-    distoholes=[]
+    objtoholes=[]
     vxs=[]
     vys=[]
-    cuetoobjdis,objtocuex,objtocuey=disandvec(cuex,cuey,objx,objy)
+    
     # for i in range(0,len(cue_boj_route)):
     #     line(WHITE,cuex,cuey,hitpointxs[i],hitpointys[i],3)
     for i in range(0,6):
-        target_hole_lines=[]
-        # target_hole_lines.append(line(colors[targetball],objx,objy,virholex[i],virholey[i],3))
-        distohole,vx,vy=disandvec(objx,objy,virholex[i],virholey[i])
-        distoholes.append(distohole)
-        vxs.append(vx)
-        vys.append(vy)  
+        cuetoobjdis,objtocuex,objtocuey=disandvec(cuex,cuey,objx,objy)
+        objtohole,objtoholevx,objtoholevy=disandvec(objx,objy,virholex[i],virholey[i])
+        objtoholes.append(objtohole)
+        vxs.append(objtocuex)
+        vys.append(objtocuey)  
     cue_obj_holeangle=[]
     print("obj ball",objx,objy)
     for i in range(0,6):
         cue_obj_hole1=vector_angle(cuex,cuey,objx,objy,virholex[i],virholey[i])
-        if cue_obj_hole1>120:
-            print(i+1,f"error")
+        if cue_obj_hole1>90:
+            cue_obj_holeangle.append(-cue_obj_hole1)
         else:
             cue_obj_holeangle.append(cue_obj_hole1)
-            print("dis  ",i+1,distoholes[i])
-            print("angle",cue_obj_holeangle)
-            line(BLACK,objx,objy,virholex[i],virholey[i],3)
     main1obstacles=[]
     main1obstacles=target_hole(hitpointxs,hitpointys,main1obstacles)
     way1scores=[]
-    for i in range(0,len(cue_obj_holeangle )):
-        way1score=cal_score(cuetoobjdis+distoholes[i],cue_obj_holeangle[i],main1obstacles[i])
+    for i in range(0,6):
+        way1score=cal_score(cuetoobjdis+objtoholes[i],cue_obj_holeangle[i],values1[i],main1obstacles[i])
         way1scores.append(way1score)
-    min_score = min(way1scores) 
-    best_index = way1scores.index(min_score)
-    best_virholex=virholex[best_index]
-    best_virholey=virholey[best_index]
-    final_hitpointx=hitpointxs[best_index]
-    final_hitpointy=hitpointys[best_index]
-    line(WHITE,cuex,cuey,final_hitpointx,final_hitpointy,3)
-    line(WHITE,objx,objy,best_virholex,best_virholey,3)
-    print("score",way1scores)
-    print("best",min_score)
-    
-    
+
+    non_positive_scores = [score for score in way1scores if score <= 0]
+# 找到小於或等於0的最大分數
+    if non_positive_scores:
+        max_non_positive_score = non_positive_scores[0]
+        for score in non_positive_scores:
+            if score > max_non_positive_score:
+                max_non_positive_score = score
+        best_index = way1scores.index(max_non_positive_score)
+        best_virholex = virholex[best_index]
+        best_virholey = virholey[best_index]
+        final_hitpointx = hitpointxs[best_index]
+        final_hitpointy = hitpointys[best_index]
+        ballx=ballx_set[best_index]
+        bally=bally_set[best_index]
+        bestvx=vxs[best_index]
+        bestvy=vys[best_index]
+        routeobs=main1obstacles[best_index]
+        # 繪製線條
+        line(WHITE, cuex, cuey, final_hitpointx, final_hitpointy, 3)
+        line(WHITE, objx, objy, best_virholex, best_virholey, 3)
+
+        print("score", way1scores)
+        print("best", max_non_positive_score)
+        final(max_non_positive_score,bestvx,bestvy,routeobs,ballx,bally)
+    else:
+        print("沒有小於或等於0的分數")
+        main2(cuex,cuey,objx,objy)
+
 def main2(cuex,cuey,objx,objy):
     cue_obj_diss=[]
     cue_objvxs=[]
@@ -313,74 +310,97 @@ def main2(cuex,cuey,objx,objy):
         middley_nums.append(middley_num)
     print("middlex",middlex_nums)
     print("middley",middley_nums)
-    for i in range(0,6):
-        pointx=[cuex-middlex_nums[i],cuex-middlex_nums[i],x1+300,x1]
-        pointy=[y1+200,y1,cuey-middley_nums[i],cuey-middley_nums[i]]
-        pointxs.append(pointx)
-        pointys.append(pointy)
-        print(pointx)
-        print(pointy)
-    values2=[]
-    for i in range(0,6):
-        for j in range(0,4):
-            pygame.draw.circle(screen,GREEN,(pointxs[i][j],pointys[i][j]),3,3)
+    pointx_groups = [
+        [cuex - middlex_nums[i] for i in range(6)],
+        [cuex - middlex_nums[i] for i in range(6)],
+        [x1 + 300 for i in range(6)],
+        [x1 for i in range(6)]
+    ]
+
+    pointy_groups = [
+        [y1 + 200 for i in range(6)],
+        [y1 for i in range(6)],
+        [cuey - middley_nums[i] for i in range(6)],
+        [cuey - middley_nums[i] for i in range(6)]
+    ]
+    print("pointx:", pointx_groups)
+    print("pointy:", pointy_groups)
+    main2obstacles1=[]
+    for i in range(0,4):
+        values2=[]
+        for j in range(0,6):
             value2=0
             for k in range(1,ballcount):
-                # value2=point_to_line_distance(ballx_set[k],bally_set[k],cuex,cuey,pointxs[i][j],pointys[i][j],2*radius,i+1,j,value2)
-                value2=point_to_line_distance(ballx_set[k],bally_set[k],hitpointxs[j],hitpointys[j],pointxs[i][j],pointys[i][j],2*radius,i+1,j,value2)
-            values2.append(value2)
+                value2=point_to_line_distance(ballx_set[k],bally_set[k],cuex,cuey,pointx_groups[i][j],pointy_groups[i][j],2*radius,i+1,j,value2)
+                value2=point_to_line_distance(ballx_set[k],bally_set[k],hitpointxs[i],hitpointys[i],pointx_groups[i][j],pointy_groups[i][j],2*radius,i+1,j,value2)
+            # if hitpointxs[i]==virholex[i] and hitpointys[i]==virholey[i]:
+            #     value2+1
             if value2==0:
-                line(GREEN,pointxs[i][j],pointys[i][j],cuex,cuey,3)
-                line(GREEN,hitpointxs[j],hitpointys[j],pointxs[i][j],pointys[i][j],3)
-    print("values2",values2)
-
-            
-    
-    # for i in range(0,4):
-    #     cue_obj_dis1,cue_objvx,cue_objvy=disandvec(cuex,cuey,pointx[i],pointy[i])
-    #     obj_tar_dis,obj_tarvx,obj_tarvy=disandvec(objx,objy,pointx[i],pointy[i])
-    # values3=[]
-    # values4=[]
-    # for j in range(0,4):
-    #     value3=0
-    #     value4=0
-    #     for i in range(1,ballcount):
-    #         value3=point_to_line_distance(ballx_set[i],bally_set[i],cuex,cuey,pointx[j],pointy[j],2*radius,i,j,value3)
-    #         value4=point_to_line_distance(ballx_set[i],bally_set[i],objx,objy,pointx[j],pointy[j],2*radius,i,j,value4)
-    #     values3.append(value3)  
-    #     values4.append(value4)
-    #     if value3==0 and value4==0:
-    #         line(PINK,cuex,cuey,pointx[j],pointy[j],3)
-    #         line(PINK,ballx_set[0],bally_set[0],pointx[j],pointy[j],3)
-    # main2obstacles=[]
-    # main2obstacles=target_hole(hitpointxs,hitpointys,main2obstacles)
-    # print("main2obs",main2obstacles)
-    # way1scores=[]
-    # for i in range(0,6):
-    #     way1score=cal_score(cuetoobjdis+distoholes[i],cue_obj_holeangle[i],main2obstacles[i])
-    #     way1scores.append(way1score)
-    # max_score = max(way1scores)
-    # best_index = way1scores.index(max_score)
-    # best_virholex=virholex[best_index]
-    # best_virholey=virholey[best_index]
-    # final_hitpointx=hitpointxs[best_index]
-    # final_hitpointy=hitpointys[best_index]
-    # line(WHITE,cuex,cuey,final_hitpointx,final_hitpointy,3)
-    # line(WHITE,objx,objy,best_virholex,best_virholey,3)
-    # print("score",way1scores)
-    # print("best",max_score)
-# def main3(cuex,cuey,objx,objy):
+                line(GREEN,pointx_groups[i][j],pointy_groups[i][j],cuex,cuey,3)
+                line(GREEN,hitpointxs[j],hitpointys[j],pointx_groups[i][j],pointy_groups[i][j],3)
+            values2.append(value2)
+        main2obstacles1.append(values2)
+    print("values2",main2obstacles1)  
+    all_angle2=[]
+    for i in range(0,4):
+        cue_obj_holeangle2=[]
+        for j in range(0,6):
+            cue_obj_hole1=vector_angle(pointx_groups[i][j],pointy_groups[i][j],objx,objy,virholex[j],virholey[j])
+            if cue_obj_hole1>90:
+                cue_obj_holeangle2.append(-cue_obj_hole1)
+            else:
+                cue_obj_holeangle2.append(cue_obj_hole1)
+        all_angle2.append(cue_obj_holeangle2)   
+    print(all_angle2)
+    main2obstacles2=[]
+    main2obstacles2=target_hole(hitpointxs,hitpointys,main2obstacles2)
+    print("main2obs",main2obstacles2)
+    print("main2cue_target_obs",main2obstacles1)
+    way2scores2=[]
+    for i in range(0,4):
+        way2scores1=[]
+        for j in range(0,6):
+            score=cal_score(cue_obj_diss[j]+obj_tar_diss[j],all_angle2[i][j],main2obstacles1[i][j],main2obstacles2[j])
+            if score<0:
+                print(score)
+            #     print(score)
+            #     pygame.draw.line(screen,RED,(pointx_groups[i][j],pointy_groups[i][j]),(cuex,cuey),3)
+            #     pygame.draw.line(screen,RED,(pointx_groups[i][j],pointy_groups[i][j]),(hitpointxs[j],hitpointys[j]),3) 
+            #     pygame.draw.line(screen,RED,(objx,objy),(virholex[j],virholey[j]),3) 
+            way2scores1.append(score)
+        way2scores2.append(way2scores1) 
+        print("way2score",i+1,way2scores2[i])
+    bestscore, best_index1,best_index2 = find_min_negative_integer_in_nested_list(way2scores2)
+    vxs2=[]
+    vys2=[]
+    for i in range(0,4):
+        vxs1=[]
+        vys1=[]
+        for j in range(0,6):
+            cue_point_dis,vx,vy=disandvec(cuex,cuey,pointx_groups[i][j],pointy_groups[i][j])
+            vxs1.append(vx)
+            vys1.append(vy)
+        vxs2.append(vxs1)
+        vys2.append(vxs1)
+    if bestscore:
+        best_virholex = virholex[best_index2]
+        best_virholey = virholey[best_index2]
+        final_hitpointx = hitpointxs[best_index2]
+        final_hitpointy = hitpointys[best_index2]
+        x=ballx_set[best_index1]
+        y=bally_set[best_index1]
+        bestvx=vxs2[best_index1][best_index2]
+        bestvy=vys2[best_index1][best_index2]
+        print(bestscore,bestvx,bestvy,1,x,y)
+        pygame.draw.line(screen,RED,(cuex,cuey),(pointx_groups[best_index1][best_index2],pointy_groups[best_index1][best_index2]),3)
+        pygame.draw.line(screen,RED,(final_hitpointx,final_hitpointy),(pointx_groups[best_index1][best_index2],pointy_groups[best_index1][best_index2]),3)
         
-        # values7=[]
-        # for i in range(0,6):
-        #     value7=0
-        #     for j in range(1,ballcount):
-        #         value7=point_to_line_distance(ballx_set[j],bally_set[j],objx,objy,virholex[i],virholey[i],2*radius,i+1,j,value7)
-        #     values7.append(value7)
-        #     if value7==0:
-        #         line(PINK,objx,objy,virholex[i],virholey[i],3) 
-        # print("target_hole",values7)
-        # return 0
+        
+    print(f"最小的負數是: {bestscore}")
+    print(f"最大負數的位置是: {best_index1,best_index2}")
+    # bestvx=vxs[best_index]
+    # bestvy=vys[best_index]
+    # routeobs=main1obstacles[best_index]
 def target_hole(hitx,hity,obstacle):
     obstacles = []
     for i in range(0,6):
@@ -391,17 +411,12 @@ def target_hole(hitx,hity,obstacle):
     print("count",obstacles)
     return obstacles
         
-def final():
-    print("route",)
-    print("score")
-    print("vx,vy")
-    print("is the have obstacle on the route")
-    print("is the have obstacle at hitpoint")
-    print("x,y")
-    
-    
-    
-        
+def final(bestscore,bestvx,bestvy,obstacle,x,y):
+    print("score",bestscore)
+    print("vx,vy",bestvx,bestvy)
+    print("obstacle on the route",obstacle)
+    print("x,y",x,y)
+
 while True:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
@@ -446,22 +461,21 @@ while True:
                     hitpointx,hitpointy=calculate_aim_point(ballx_set[0],bally_set[0],virholex[i],virholey[i],radius)
                     hitpointys.append(hitpointy)
                     hitpointxs.append(hitpointx)
-                distonine=[]
-                distohole=[]
-                distoelse=[]
-                value1=0
-                cue_obj_obstacle=[]
+                values1=[]
                 for i in range(0,6):
+                    value1=0
                     for j in range(1,ballcount):
-                        value1=point_to_line_distance(ballx_set[j], bally_set[j], cuex,cuey,hitpointxs[i],hitpointys[i], 2*radius,"cue",j,value1)
-                    if value1==0:
-                        cue_obj_obstacle.append(value1)
-                print("cue_obj",cue_obj_obstacle)
-                if cue_obj_obstacle:
+                       value1=point_to_line_distance(ballx_set[j], bally_set[j], cuex,cuey,hitpointxs[i],hitpointys[i], 2*radius,"cue",j,value1)
+                    values1.append(value1)
+                route=0
+                for i in range(0,6):
+                    if values1[i]==0:
+                        route=1
+                print(route)
+                if route==1:
                     main(cuex,cuey,ballx_set[0],bally_set[0])
                 else:
                     main2(cuex,cuey,ballx_set[0],bally_set[0])
-                            
                 pygame.draw.circle(screen,WHITE,(cuex,cuey),3*radius,2)
                 pygame.draw.circle(screen,colors[targetball],(ballx_set[0],bally_set[0]),3*radius,2)
                 text()
