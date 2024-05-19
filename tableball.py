@@ -5,26 +5,27 @@ import math
 import pygame as pg,random,math,time
 import sys
 import pygame
-tableheight =1920
-tablewidth  =932
-actualwidth =62.7
-actualheight=30.4
+# tablewidth =1920
+# tableheight =932
 # radius of balls (30.4cm: 1.6cm = 932pixels : 97.5pixels)
 # R = 1.6/actualheight*tableheight
 # r = round(R) #97
 # #radius of holes (62.6cm : 1920pixels = 2cm : 60pixels)
 # hole = tablewidth/actualwidth*2
 # rb = round(hole)
-radius=10
-holeradius=15
+actualwidth =62.7
+actualheight=30.4
+width=379
+height=184
+radius=int(1.6/actualheight*height)
+holeradius=int(width/actualwidth*2)
 #background
 pygame.init()
 WIDTH, HEIGHT = 1000,500
 WINDOW_SIZE = (WIDTH, HEIGHT)
 screen = pygame.display .set_mode(WINDOW_SIZE)
 pygame.display.set_caption("table tennis")
-width=300
-height=200
+
 value=0
 #color
 WHITE = (255, 255, 255)
@@ -272,13 +273,13 @@ def main(cuex,cuey,objx,objy,):
         bestvx=vxs[best_index]
         bestvy=vys[best_index]
         routeobs=main1obstacles[best_index]
-        # 繪製線條
-        line(WHITE, cuex, cuey, final_hitpointx, final_hitpointy, 3)
+        bestx,besty=calculate_aim_point(cuex,cuey,final_hitpointx,final_hitpointy,radius)
+        pygame.draw.circle(screen,RED,(bestx,besty),3,3)
+        line(WHITE, bestx, besty, final_hitpointx, final_hitpointy, 3)
         line(WHITE, objx, objy, best_virholex, best_virholey, 3)
-
         print("score", way1scores)
         print("best", max_non_positive_score)
-        final(max_non_positive_score,bestvx,bestvy,routeobs,ballx,bally)
+        final(max_non_positive_score,bestvx,bestvy,routeobs,bestx,besty)
     else:
         print("沒有小於或等於0的分數")
         main2(cuex,cuey,objx,objy)
@@ -313,12 +314,12 @@ def main2(cuex,cuey,objx,objy):
     pointx_groups = [
         [cuex - middlex_nums[i] for i in range(6)],
         [cuex - middlex_nums[i] for i in range(6)],
-        [x1 + 300 for i in range(6)],
+        [x1 + width for i in range(6)],
         [x1 for i in range(6)]
     ]
 
     pointy_groups = [
-        [y1 + 200 for i in range(6)],
+        [y1 + height for i in range(6)],
         [y1 for i in range(6)],
         [cuey - middley_nums[i] for i in range(6)],
         [cuey - middley_nums[i] for i in range(6)]
@@ -331,13 +332,13 @@ def main2(cuex,cuey,objx,objy):
         for j in range(0,6):
             value2=0
             for k in range(1,ballcount):
-                value2=point_to_line_distance(ballx_set[k],bally_set[k],cuex,cuey,pointx_groups[i][j],pointy_groups[i][j],2*radius,i+1,j,value2)
-                value2=point_to_line_distance(ballx_set[k],bally_set[k],hitpointxs[i],hitpointys[i],pointx_groups[i][j],pointy_groups[i][j],2*radius,i+1,j,value2)
+                value2=point_to_line_distance(ballx_set[k],bally_set[k],cuex,cuey,pointx_groups[i][j],pointy_groups[i][j],2*radius+1,i+1,j,value2)
+                value2=point_to_line_distance(ballx_set[k],bally_set[k],hitpointxs[i],hitpointys[i],pointx_groups[i][j],pointy_groups[i][j],2*radius+1,i+1,j,value2)
             # if hitpointxs[i]==virholex[i] and hitpointys[i]==virholey[i]:
             #     value2+1
-            if value2==0:
-                line(GREEN,pointx_groups[i][j],pointy_groups[i][j],cuex,cuey,3)
-                line(GREEN,hitpointxs[j],hitpointys[j],pointx_groups[i][j],pointy_groups[i][j],3)
+            # if value2==0:
+            #     line(GREEN,pointx_groups[i][j],pointy_groups[i][j],cuex,cuey,3)
+            #     line(GREEN,hitpointxs[j],hitpointys[j],pointx_groups[i][j],pointy_groups[i][j],3)
             values2.append(value2)
         main2obstacles1.append(values2)
     print("values2",main2obstacles1)  
@@ -363,10 +364,9 @@ def main2(cuex,cuey,objx,objy):
             score=cal_score(cue_obj_diss[j]+obj_tar_diss[j],all_angle2[i][j],main2obstacles1[i][j],main2obstacles2[j])
             if score<0:
                 print(score)
-            #     print(score)
-            #     pygame.draw.line(screen,RED,(pointx_groups[i][j],pointy_groups[i][j]),(cuex,cuey),3)
-            #     pygame.draw.line(screen,RED,(pointx_groups[i][j],pointy_groups[i][j]),(hitpointxs[j],hitpointys[j]),3) 
-            #     pygame.draw.line(screen,RED,(objx,objy),(virholex[j],virholey[j]),3) 
+                pygame.draw.line(screen,GREEN,(pointx_groups[i][j],pointy_groups[i][j]),(cuex,cuey),3)
+                pygame.draw.line(screen,GREEN,(pointx_groups[i][j],pointy_groups[i][j]),(hitpointxs[j],hitpointys[j]),3) 
+                pygame.draw.line(screen,GREEN,(objx,objy),(virholex[j],virholey[j]),3) 
             way2scores1.append(score)
         way2scores2.append(way2scores1) 
         print("way2score",i+1,way2scores2[i])
@@ -394,13 +394,13 @@ def main2(cuex,cuey,objx,objy):
         print(bestscore,bestvx,bestvy,1,x,y)
         pygame.draw.line(screen,RED,(cuex,cuey),(pointx_groups[best_index1][best_index2],pointy_groups[best_index1][best_index2]),3)
         pygame.draw.line(screen,RED,(final_hitpointx,final_hitpointy),(pointx_groups[best_index1][best_index2],pointy_groups[best_index1][best_index2]),3)
-        
-        
     print(f"最小的負數是: {bestscore}")
     print(f"最大負數的位置是: {best_index1,best_index2}")
     # bestvx=vxs[best_index]
     # bestvy=vys[best_index]
     # routeobs=main1obstacles[best_index]
+    
+    
 def target_hole(hitx,hity,obstacle):
     obstacles = []
     for i in range(0,6):
