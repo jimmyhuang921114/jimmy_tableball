@@ -177,9 +177,9 @@ def point_to_line_distance(px, py, x1, y1, x2, y2, radius,i, j,value):
     # 判断是否碰撞
     if dist <= radius:
         value+=1
-    #print(i,ballnumber[j])
-    return value
-def find_min_negative_integer_in_nested_list(lst):
+        return value,px,py
+    return value,0,0
+def find_min_negative_integer(lst):
     min_negative = None
     min_position1 = None
     min_position2=None
@@ -268,11 +268,18 @@ def main(cuex,cuey,objx,objy,):
         best_virholey = virholey[best_index]
         final_hitpointx = hitpointxs[best_index]
         final_hitpointy = hitpointys[best_index]
-        ballx=ballx_set[best_index]
-        bally=bally_set[best_index]
         bestvx=vxs[best_index]
         bestvy=vys[best_index]
         routeobs=main1obstacles[best_index]
+        finalobs=0
+        finalobssx=[]
+        finalobssy=[]
+        for i in range(1,ballcount):
+            finalobs,obsx,obsy=point_to_line_distance(ballx_set[i],bally_set[i],objx,objy,best_virholex,best_virholey,2*radius,"final",i+1,finalobs)
+            if obsx>0:
+                finalobssx.append(obsx)
+                finalobssy.append(obsy)
+        print("finalobs",finalobs,"finalobsx",finalobssx,"finalobsy",finalobssy)
         bestx,besty=calculate_aim_point(cuex,cuey,final_hitpointx,final_hitpointy,radius)
         pygame.draw.circle(screen,RED,(bestx,besty),3,3)
         line(WHITE, bestx, besty, final_hitpointx, final_hitpointy, 3)
@@ -332,8 +339,8 @@ def main2(cuex,cuey,objx,objy):
         for j in range(0,6):
             value2=0
             for k in range(1,ballcount):
-                value2=point_to_line_distance(ballx_set[k],bally_set[k],cuex,cuey,pointx_groups[i][j],pointy_groups[i][j],2*radius+1,i+1,j,value2)
-                value2=point_to_line_distance(ballx_set[k],bally_set[k],hitpointxs[i],hitpointys[i],pointx_groups[i][j],pointy_groups[i][j],2*radius+1,i+1,j,value2)
+                value2,z,z=point_to_line_distance(ballx_set[k],bally_set[k],cuex,cuey,pointx_groups[i][j],pointy_groups[i][j],2*radius+1,i+1,j,value2)
+                value2,z,z=point_to_line_distance(ballx_set[k],bally_set[k],hitpointxs[i],hitpointys[i],pointx_groups[i][j],pointy_groups[i][j],2*radius+1,i+1,j,value2)
             # if hitpointxs[i]==virholex[i] and hitpointys[i]==virholey[i]:
             #     value2+1
             # if value2==0:
@@ -370,7 +377,7 @@ def main2(cuex,cuey,objx,objy):
             way2scores1.append(score)
         way2scores2.append(way2scores1) 
         print("way2score",i+1,way2scores2[i])
-    bestscore, best_index1,best_index2 = find_min_negative_integer_in_nested_list(way2scores2)
+    bestscore, best_index1,best_index2 = find_min_negative_integer(way2scores2)
     vxs2=[]
     vys2=[]
     for i in range(0,4):
@@ -390,6 +397,15 @@ def main2(cuex,cuey,objx,objy):
         bestvx=vxs2[best_index1][best_index2]
         bestvy=vys2[best_index1][best_index2]
         obstacle2=main2obstacles2[best_index2]
+        finalobssx=[]
+        finalobssy=[]
+        finalobs=0
+        for i in range(1,ballcount):
+            finalobs,obsx,obsy=point_to_line_distance(ballx_set[i],bally_set[i],objx,objy,best_virholex,best_virholey,2*radius,"final",i+1,finalobs)
+            if obsx>0:
+                finalobssx.append(obsx)
+                finalobssy.append(obsy)
+        print("finalobs",finalobs,"finalobsx",finalobssx,"finalobsy",finalobssy)
         bestx,besty=calculate_aim_point(cuex,cuey,pointx_groups[best_index1][best_index2],pointy_groups[best_index1][best_index2],radius)
         pygame.draw.circle(screen,RED,(bestx,besty),3,3)
         final(bestscore,bestvx,bestvy,obstacle2,bestx,besty)
@@ -404,7 +420,7 @@ def target_hole(hitx,hity,obstacle):
     for i in range(0,6):
         count = 0 
         for j in range(1, ballcount):
-            count = point_to_line_distance(ballx_set[j], bally_set[j], hitpointxs[i], hitpointys[i], virholex[i], virholey[i], 2*radius, i+1, j, count)
+            count,px,py = point_to_line_distance(ballx_set[j], bally_set[j], hitpointxs[i], hitpointys[i], virholex[i], virholey[i], 2*radius, i+1, j, count)
         obstacles.append(count)
     print("count",obstacles)
     return obstacles
@@ -414,6 +430,7 @@ def final(bestscore,bestvx,bestvy,obstacle,x,y):
     print("vx,vy",bestvx,bestvy)
     print("obstacle on the route",obstacle)
     print("x,y",x,y)
+    return bestscore,bestvx,bestvy,obstacle,x,y
 
 while True:
     for event in pygame.event.get():
@@ -466,7 +483,7 @@ while True:
                 for i in range(0,6):
                     value1=0
                     for j in range(1,ballcount):
-                       value1=point_to_line_distance(ballx_set[j], bally_set[j], cuex,cuey,hitpointxs[i],hitpointys[i], 2*radius,"cue",j,value1)
+                       value1,z,z=point_to_line_distance(ballx_set[j], bally_set[j], cuex,cuey,hitpointxs[i],hitpointys[i], 2*radius,"cue",j,value1)
                     values1.append(value1)
                 route=0
                 for i in range(0,6):
