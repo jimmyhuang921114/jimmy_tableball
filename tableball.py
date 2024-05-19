@@ -391,15 +391,14 @@ def main2(cuex,cuey,objx,objy):
         y=bally_set[best_index1]
         bestvx=vxs2[best_index1][best_index2]
         bestvy=vys2[best_index1][best_index2]
-        print(bestscore,bestvx,bestvy,1,x,y)
+        obstacle2=main2obstacles2[best_index2]
+        bestx,besty=calculate_aim_point(cuex,cuey,pointx_groups[best_index1][best_index2],pointy_groups[best_index1][best_index2],radius)
+        pygame.draw.circle(screen,RED,(bestx,besty),3,3)
+        final(bestscore,bestvx,bestvy,obstacle2,bestx,besty)
         pygame.draw.line(screen,RED,(cuex,cuey),(pointx_groups[best_index1][best_index2],pointy_groups[best_index1][best_index2]),3)
         pygame.draw.line(screen,RED,(final_hitpointx,final_hitpointy),(pointx_groups[best_index1][best_index2],pointy_groups[best_index1][best_index2]),3)
     print(f"最小的負數是: {bestscore}")
     print(f"最大負數的位置是: {best_index1,best_index2}")
-    # bestvx=vxs[best_index]
-    # bestvy=vys[best_index]
-    # routeobs=main1obstacles[best_index]
-    
     
 def target_hole(hitx,hity,obstacle):
     obstacles = []
