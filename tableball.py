@@ -387,8 +387,6 @@ def main2(cuex,cuey,objx,objy):
         best_virholey = virholey[best_index2]
         final_hitpointx = hitpointxs[best_index2]
         final_hitpointy = hitpointys[best_index2]
-        x=ballx_set[best_index1]
-        y=bally_set[best_index1]
         bestvx=vxs2[best_index1][best_index2]
         bestvy=vys2[best_index1][best_index2]
         obstacle2=main2obstacles2[best_index2]
@@ -397,6 +395,7 @@ def main2(cuex,cuey,objx,objy):
         final(bestscore,bestvx,bestvy,obstacle2,bestx,besty)
         pygame.draw.line(screen,RED,(cuex,cuey),(pointx_groups[best_index1][best_index2],pointy_groups[best_index1][best_index2]),3)
         pygame.draw.line(screen,RED,(final_hitpointx,final_hitpointy),(pointx_groups[best_index1][best_index2],pointy_groups[best_index1][best_index2]),3)
+        pygame.draw.line(screen,RED,(objx,objy),(best_virholex,best_virholey),3)
     print(f"最小的負數是: {bestscore}")
     print(f"最大負數的位置是: {best_index1,best_index2}")
     
@@ -440,10 +439,13 @@ while True:
                 #def generate the ball
                 ballcount,ballnumber=generate(ballcount)
                 print("ballcount",ballcount)
-                #draw the ball
-                ballx_set = [ball.x for ball in balls]#read the information from balls 
+                # ballcount=len(data)/2
+                # for i in range(0,ballcount-1):
+                    # ballx_set = [ball.x for ball in balls]
+                    # bally_set = [ball.y for ball in balls]
+                # cuex,cuey =ballx(ballxount),bally(ballcount)
+                ballx_set = [ball.x for ball in balls]
                 bally_set = [ball.y for ball in balls]
-                color=[ball.color for ball in balls]
                 for ball in balls:
                     ball.drawball(screen)
                 #nine=ball.nineball(screen)
