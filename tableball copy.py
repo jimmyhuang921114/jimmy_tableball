@@ -169,10 +169,10 @@ def main1(cuex, cuey, objx, objy, hitpointxs, hitpointys, values1, ballcount, ba
         way1score = cal_score(cuetoobjdis + objtoholes[i], cue_obj_holeangle[i], values1[i], main1obstacles[i])
         way1scores.append(way1score)
 
-    non_positive_scores = [score for score in way1scores if score <= 0]
-    if non_positive_scores:
-        max_non_positive_score = max(non_positive_scores)
-        best_index = way1scores.index(max_non_positive_score)
+    bestscore = [score for score in way1scores if score <= 0]
+    if bestscore:
+        bestscore = max(bestscore)
+        best_index = way1scores.index(bestscore)
         best_virholex = vir_hole_positions[best_index][0]
         best_virholey = vir_hole_positions[best_index][1]
         final_hitpointx = hitpointxs[best_index]
@@ -192,12 +192,13 @@ def main1(cuex, cuey, objx, objy, hitpointxs, hitpointys, values1, ballcount, ba
             if px > 0:
                 finalobsx.append(px)
                 finalobsy.append(py)
-        final(max_non_positive_score, bestvx, bestvy, routeobs, bestx, besty)
-        return max_non_positive_score, bestvx, bestvy, routeobs, bestx, besty
+        final(bestscore, bestvx, bestvy, routeobs, bestx, besty)
+        return bestscore,bestvx,bestvy,countobs,bestx,besty
     else:
-        return main2(cuex, cuey, objx, objy, hitpointxs, hitpointys, ballx_set, bally_set, ballcount)
+        main2(cuex, cuey, objx, objy, hitpointxs, hitpointys, ballx_set, bally_set)
+    print(bestscore,bestvx,bestvy,countobs,bestx,besty)
 
-def main2(cuex, cuey, objx, objy, hitpointxs, hitpointys, ballx_set, bally_set, ballcount):
+def main2(cuex, cuey, objx, objy, hitpointxs, hitpointys, ballx_set, bally_set):
     cue_obj_diss = []
     cue_objvxs = []
     cue_objvys = []
@@ -286,6 +287,7 @@ def main2(cuex, cuey, objx, objy, hitpointxs, hitpointys, ballx_set, bally_set, 
         final_hitpointy = hitpointys[best_index2]
         bestvx = vxs2[best_index1][best_index2]
         bestvy = vys2[best_index1][best_index2]
+        bestx, besty = calculate_aim_point(cuex, cuey, final_hitpointx, final_hitpointy, radius)
         finalobsx = []
         finalobsy = []
         countobs = 0
@@ -294,11 +296,11 @@ def main2(cuex, cuey, objx, objy, hitpointxs, hitpointys, ballx_set, bally_set, 
             if px > 0:
                 finalobsx.append(px)
                 finalobsy.append(py)
+        final(bestscore,bestvx,bestvy,countobs,bestx,besty)
         pg.draw.line(screen, RED, (cuex, cuey), (pointx_groups[best_index1][best_index2], pointy_groups[best_index1][best_index2]), 3)
         pg.draw.line(screen, RED, (final_hitpointx, final_hitpointy), (pointx_groups[best_index1][best_index2], pointy_groups[best_index1][best_index2]), 3)
         pg.draw.line(screen, RED, (objx, objy), (best_virholex, best_virholey), 3)
-        return bestscore, bestvx, bestvy, countobs, final_hitpointx, final_hitpointy
-    return 0, 0, 0, 0, 0, 0
+        return bestscore,bestvx,bestvy,countobs,bestx,besty
 
 def vector_angle(n1x, n1y, n2x, n2y, n3x, n3y):
     vx1, vy1 = n2x - n1x, n2y - n1y
@@ -379,9 +381,8 @@ def main(ballx_set, bally_set, ballcount, cuex, cuey):
 
                     route = any(v == 0 for v in values1)
                     if route:
-                        return main1(cuex, cuey, ballx_set[0], bally_set[0], hitpointxs, hitpointys, values1, ballcount, ballx_set, bally_set)
+                        main1(cuex, cuey, ballx_set[0], bally_set[0], hitpointxs, hitpointys, values1, ballcount, ballx_set, bally_set)
                     else:
-                        return main2(cuex, cuey, ballx_set[0], bally_set[0], hitpointxs, hitpointys, ballx_set, bally_set, ballcount)
-
+                        main2(cuex, cuey, ballx_set[0], bally_set[0], hitpointxs, hitpointys, ballx_set, bally_set)
                     pg.time.wait(3000)  # Wait 3 seconds
                     pg.display.update()
