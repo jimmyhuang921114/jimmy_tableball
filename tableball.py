@@ -15,8 +15,8 @@ import pygame
 # rb = round(hole)
 actualwidth =62.7
 actualheight=30.4
-width=379
-height=184
+width=627
+height=304
 radius=int(1.6/actualheight*height)
 holeradius=int(width/actualwidth*2)
 #background
@@ -179,7 +179,7 @@ def point_to_line_distance(px, py, x1, y1, x2, y2, radius,i, j,value):
         value+=1
         return value,px,py
     return value,0,0
-def find_min_negative_integer(lst):
+def find_min_negative_integer_in_nested_list(lst):
     min_negative = None
     min_position1 = None
     min_position2=None
@@ -208,7 +208,7 @@ def text():
         screen.blit(txtexistball, (550+10*i, 50))
     for i in range(0,9):
         txtexistball = font.render((colorname[i]), True, BLACK)
-        screen.blit(txtexistball, (700, 50+20*i))  
+        screen.blit(txtexistball, (900, 50+20*i))  
 def calculate_aim_point(ball_x, ball_y, target_x, target_y, ball_diameter):
     vector_x = target_x - ball_x
     vector_y = target_y - ball_y
@@ -232,9 +232,6 @@ def main(cuex,cuey,objx,objy,):
     objtoholes=[]
     vxs=[]
     vys=[]
-    
-    # for i in range(0,len(cue_boj_route)):
-    #     line(WHITE,cuex,cuey,hitpointxs[i],hitpointys[i],3)
     for i in range(0,6):
         cuetoobjdis,objtocuex,objtocuey=disandvec(cuex,cuey,objx,objy)
         objtohole,objtoholevx,objtoholevy=disandvec(objx,objy,virholex[i],virholey[i])
@@ -255,7 +252,6 @@ def main(cuex,cuey,objx,objy,):
     for i in range(0,6):
         way1score=cal_score(cuetoobjdis+objtoholes[i],cue_obj_holeangle[i],values1[i],main1obstacles[i])
         way1scores.append(way1score)
-
     non_positive_scores = [score for score in way1scores if score <= 0]
 # 找到小於或等於0的最大分數
     if non_positive_scores:
@@ -268,22 +264,24 @@ def main(cuex,cuey,objx,objy,):
         best_virholey = virholey[best_index]
         final_hitpointx = hitpointxs[best_index]
         final_hitpointy = hitpointys[best_index]
+        ballx=ballx_set[best_index]
+        bally=bally_set[best_index]
         bestvx=vxs[best_index]
         bestvy=vys[best_index]
         routeobs=main1obstacles[best_index]
-        finalobs=0
-        finalobssx=[]
-        finalobssy=[]
-        for i in range(1,ballcount):
-            finalobs,obsx,obsy=point_to_line_distance(ballx_set[i],bally_set[i],objx,objy,best_virholex,best_virholey,2*radius,"final",i+1,finalobs)
-            if obsx>0:
-                finalobssx.append(obsx)
-                finalobssy.append(obsy)
-        print("finalobs",finalobs,"finalobsx",finalobssx,"finalobsy",finalobssy)
         bestx,besty=calculate_aim_point(cuex,cuey,final_hitpointx,final_hitpointy,radius)
         pygame.draw.circle(screen,RED,(bestx,besty),3,3)
         line(WHITE, bestx, besty, final_hitpointx, final_hitpointy, 3)
         line(WHITE, objx, objy, best_virholex, best_virholey, 3)
+        finalobsx=[]
+        finalobsy=[]
+        countobs=0
+        for i in range(1,ballcount):
+            countobs,px,py=point_to_line_distance(ballx_set[i],bally_set[i],objx,objy,best_virholex,best_virholey,2*radius,i,j+1,countobs)
+            if px>0:
+                finalobsx.append(px)
+                finalobsy.append(py)
+        print("finalobs",countobs,"finalobsy",finalobsx,"finalobsx",finalobsy)
         print("score", way1scores)
         print("best", max_non_positive_score)
         final(max_non_positive_score,bestvx,bestvy,routeobs,bestx,besty)
@@ -339,8 +337,8 @@ def main2(cuex,cuey,objx,objy):
         for j in range(0,6):
             value2=0
             for k in range(1,ballcount):
-                value2,z,z=point_to_line_distance(ballx_set[k],bally_set[k],cuex,cuey,pointx_groups[i][j],pointy_groups[i][j],2*radius+1,i+1,j,value2)
-                value2,z,z=point_to_line_distance(ballx_set[k],bally_set[k],hitpointxs[i],hitpointys[i],pointx_groups[i][j],pointy_groups[i][j],2*radius+1,i+1,j,value2)
+                value2,z,z=point_to_line_distance(ballx_set[k],bally_set[k],cuex,cuey,pointx_groups[i][j],pointy_groups[i][j],2*radius+2,i+1,j,value2)
+                value2,z,z=point_to_line_distance(ballx_set[k],bally_set[k],hitpointxs[i],hitpointys[i],pointx_groups[i][j],pointy_groups[i][j],2*radius+2,i+1,j,value2)
             # if hitpointxs[i]==virholex[i] and hitpointys[i]==virholey[i]:
             #     value2+1
             # if value2==0:
@@ -377,7 +375,7 @@ def main2(cuex,cuey,objx,objy):
             way2scores1.append(score)
         way2scores2.append(way2scores1) 
         print("way2score",i+1,way2scores2[i])
-    bestscore, best_index1,best_index2 = find_min_negative_integer(way2scores2)
+    bestscore, best_index1,best_index2 = find_min_negative_integer_in_nested_list(way2scores2)
     vxs2=[]
     vys2=[]
     for i in range(0,4):
@@ -394,33 +392,36 @@ def main2(cuex,cuey,objx,objy):
         best_virholey = virholey[best_index2]
         final_hitpointx = hitpointxs[best_index2]
         final_hitpointy = hitpointys[best_index2]
+        x=ballx_set[best_index1]
+        y=bally_set[best_index1]
         bestvx=vxs2[best_index1][best_index2]
         bestvy=vys2[best_index1][best_index2]
-        obstacle2=main2obstacles2[best_index2]
-        finalobssx=[]
-        finalobssy=[]
-        finalobs=0
+        finalobsx=[]
+        finalobsy=[]
+        countobs=0
         for i in range(1,ballcount):
-            finalobs,obsx,obsy=point_to_line_distance(ballx_set[i],bally_set[i],objx,objy,best_virholex,best_virholey,2*radius,"final",i+1,finalobs)
-            if obsx>0:
-                finalobssx.append(obsx)
-                finalobssy.append(obsy)
-        print("finalobs",finalobs,"finalobsx",finalobssx,"finalobsy",finalobssy)
-        bestx,besty=calculate_aim_point(cuex,cuey,pointx_groups[best_index1][best_index2],pointy_groups[best_index1][best_index2],radius)
-        pygame.draw.circle(screen,RED,(bestx,besty),3,3)
-        final(bestscore,bestvx,bestvy,obstacle2,bestx,besty)
+            countobs,px,py=point_to_line_distance(ballx_set[i],bally_set[i],objx,objy,best_virholex,best_virholey,2*radius,i,j+1,countobs)
+            if px>0:
+                finalobsx.append(px)
+                finalobsy.append(py)
+        print("finalobs",countobs,"finalobsy",finalobsx,"finalobsx",finalobsy)
+        print(bestscore,bestvx,bestvy,1,x,y)
         pygame.draw.line(screen,RED,(cuex,cuey),(pointx_groups[best_index1][best_index2],pointy_groups[best_index1][best_index2]),3)
         pygame.draw.line(screen,RED,(final_hitpointx,final_hitpointy),(pointx_groups[best_index1][best_index2],pointy_groups[best_index1][best_index2]),3)
         pygame.draw.line(screen,RED,(objx,objy),(best_virholex,best_virholey),3)
     print(f"最小的負數是: {bestscore}")
     print(f"最大負數的位置是: {best_index1,best_index2}")
+    # bestvx=vxs[best_index]
+    # bestvy=vys[best_index]
+    # routeobs=main1obstacles[best_index]
+    
     
 def target_hole(hitx,hity,obstacle):
     obstacles = []
     for i in range(0,6):
         count = 0 
         for j in range(1, ballcount):
-            count,px,py = point_to_line_distance(ballx_set[j], bally_set[j], hitpointxs[i], hitpointys[i], virholex[i], virholey[i], 2*radius, i+1, j, count)
+            count ,z,z= point_to_line_distance(ballx_set[j], bally_set[j], hitpointxs[i], hitpointys[i], virholex[i], virholey[i], 2*radius, i+1, j, count)
         obstacles.append(count)
     print("count",obstacles)
     return obstacles
@@ -430,7 +431,6 @@ def final(bestscore,bestvx,bestvy,obstacle,x,y):
     print("vx,vy",bestvx,bestvy)
     print("obstacle on the route",obstacle)
     print("x,y",x,y)
-    return bestscore,bestvx,bestvy,obstacle,x,y
 
 while True:
     for event in pygame.event.get():
@@ -456,13 +456,10 @@ while True:
                 #def generate the ball
                 ballcount,ballnumber=generate(ballcount)
                 print("ballcount",ballcount)
-                # ballcount=len(data)/2
-                # for i in range(0,ballcount-1):
-                    # ballx_set = [ball.x for ball in balls]
-                    # bally_set = [ball.y for ball in balls]
-                # cuex,cuey =ballx(ballxount),bally(ballcount)
-                ballx_set = [ball.x for ball in balls]
+                #draw the ball
+                ballx_set = [ball.x for ball in balls]#read the information from balls 
                 bally_set = [ball.y for ball in balls]
+                color=[ball.color for ball in balls]
                 for ball in balls:
                     ball.drawball(screen)
                 #nine=ball.nineball(screen)
