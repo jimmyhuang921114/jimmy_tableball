@@ -54,28 +54,48 @@ def point_to_vector(n1x, n1y, vector_x, vector_y, dot_x, dot_y):
     else:
         return -1
 # Generate random balls
+def is_overlapping(x, y, existing_balls, radius):
+    for bx, by in existing_balls:
+        if math.sqrt((x - bx) ** 2 + (y - by) ** 2) < 2 * radius:
+            return True
+    return False
+
 def generate_balls(ball_count, radius):
     cuex = random.randint(x1 + radius, x1 + width - radius)
     cuey = random.randint(y1 + radius, y1 + height - radius)
-    ballx_set = []
-    bally_set = []
-    for _ in range(ball_count):
+    ball_positions = []
+
+    while len(ball_positions) < ball_count:
         x = random.randint(x1 + radius, x1 + width - radius)
         y = random.randint(y1 + radius, y1 + height - radius)
-        ballx_set.append(x)
-        bally_set.append(y)
+        if not is_overlapping(x, y, ball_positions, radius):
+            ball_positions.append((x, y))
+
+    ballx_set = [pos[0] for pos in ball_positions]
+    bally_set = [pos[1] for pos in ball_positions]
+
     return cuex, cuey, ballx_set, bally_set, ball_count
 
-# Calculate aim point()
+# Calculate aim point() 
 def calculate_aim_point(ball_x, ball_y, target_x, target_y, ball_diameter):
+    # 计算从球到目标的向量
     vector_x = target_x - ball_x
     vector_y = target_y - ball_y
+    
+    # 计算向量的长度
     length = math.sqrt(vector_x ** 2 + vector_y ** 2)
+    
+    # 计算单位向量（方向向量）
     unit_vector_x = vector_x / length
     unit_vector_y = vector_y / length
-    aim_distance = 2 * ball_diameter
+    
+    # 计算一个球直径的距离
+    aim_distance = 2*ball_diameter
+    
+    # 计算在球的后方一个直径的点
     aim_point_x = ball_x - unit_vector_x * aim_distance
     aim_point_y = ball_y - unit_vector_y * aim_distance
+    
     return aim_point_x, aim_point_y
 
 # Calculate distance from point to line segment
@@ -90,7 +110,7 @@ def point_to_line_distance(px, py, x1, y1, x2, y2, radius, i, j, value):
         closest_point = (x1, y1)
     else:
         t = (apx * dx + apy * dy) / d_mag_squared
-        if t < 0:
+        if t < 0:       
             closest_point = (x1, y1)
             dist = math.sqrt((px - x1) ** 2 + (py - y1) ** 2)
         elif t > 1:
@@ -147,66 +167,153 @@ def perpendicular_points(p_x, p_y, q_x, q_y, distance):
     return left_point_x, left_point_y, right_point_x, right_point_y
 
 # Main game logic functions (main1 and main2)
-def methond1(cuex, cuey, objx, objy,ninex,niney,objhitpointxs, objhitpointys,ninehitpointxs,ninehitpointys ,values1, ballcount, ballx_set, bally_set):
+def method1(cuex, cuey, objx, objy,ninex,niney,objhitpointxs, objhitpointys,ninehitpointxs,ninehitpointys ,values1, ballcount, ballx_set, bally_set):
+    print("method1")
     routenumber=1
+    judge_nine_way=False
     objtoholes = []
     vxs = []
     vys = []
-    #calculate the distance(cue,obj,holes)
+    obj_hole_angles=[]
+    cue_obj_angles=[]
+    obj_ninehitpointxs=[]
+    obj_ninehitpointys=[]
     for i in range(6):
-        cuetoobjdis, objtocuex, objtocuey = distance_and_vector(cuex, cuey, objhitpointxs[i],objhitpointys[i])
-        objtohole, _,_= distance_and_vector(objx, objy, vir_hole_positions[i][0], vir_hole_positions[i][1])
-        objtoholes.append(objtohole)
-        vxs.append(objtocuex)
-        vys.append(objtocuey)
-    #calculate the angle(cue,obj)
-    cue_obj_holeangle = []
-    for i in range(6):
-        cue_obj_hole1 = vector_angle(cuex, cuey, objx, objy, vir_hole_positions[i][0], vir_hole_positions[i][1])
-        if cue_obj_hole1 > 100:
-            cue_obj_holeangle.append(-cue_obj_hole1)
+        obj_hole_angle = vector_angle(objx,objy,ninex,niney,vir_hole_positions[i][0],vir_hole_positions[i][1])
+        obj_ninehitpointx,obj_ninehitpointy=calculate_aim_point(objx,objy,ninehitpointxs[i],ninehitpointys[i],radius)
+        obj_ninehitpointxs.append(obj_ninehitpointx)
+        obj_ninehitpointys.append(obj_ninehitpointy)
+        cue_obj_angle = vector_angle(cuex, cuey, obj_ninehitpointxs[i],obj_ninehitpointys[i],ninex,niney)
+        if  cue_obj_angle <  100:
+            cue_obj_angle=-cue_obj_angle
+        cue_obj_angles.append(cue_obj_angle)
+        if  obj_hole_angle < 100:
+            obj_hole_angles.append(-obj_hole_angle)
         else:
-            cue_obj_holeangle.append(cue_obj_hole1)
-    #detect the obstacle on the route
-    main1obstacles = target_hole(objhitpointxs, objhitpointys, ballcount, ballx_set, bally_set,6)
-    way1scores = []
-    for i in range(6):
-        way1score = cal_score(cuetoobjdis + objtoholes[i], cue_obj_holeangle[i], values1[i], main1obstacles[i])
-        way1scores.append(way1score)
-    #judge the kiss nine ball
-    nine_to_hole_point=[]
-    for i in range(6):
-        nine_to_hole=calculate_aim_point(ninex,niney,vir_hole_positions[i][0],vir_hole_positions[i][1],radius)
-        nine_to_hole_point.append(nine_to_hole)
-    
-    #pick the biggest and negative score
-    non_positive_scores = [score for score in way1scores if score <= 0]
-    if non_positive_scores:
-        max_non_positive_score = max(non_positive_scores)
-        best_index = way1scores.index(max_non_positive_score)
-        best_virholex = vir_hole_positions[best_index][0]
-        best_virholey = vir_hole_positions[best_index][1]
-        final_hitpointx = objhitpointxs[best_index]
-        final_hitpointy = objhitpointys[best_index]
-        bestvx = vxs[best_index]
-        bestvy = vys[best_index]
-        routeobs = main1obstacles[best_index]
-        hitcuepointx, hitcuepointy = calculate_aim_point(cuex, cuey, final_hitpointx, final_hitpointy, radius)
-        finalobsx = []
-        finalobsy = []
-        countobs = 0
-        for i in range(1, ballcount):
-            countobs, px, py = point_to_line_distance(ballx_set[i], bally_set[i], objx, objy, best_virholex, best_virholey, 2 * radius, i, 1, countobs)
-            if px > 0:
-                finalobsx.append(px)
-                finalobsy.append(py)
-        cue_obstacle=edge_detect(hitcuepointx,hitcuepointy)
-        final(routenumber,max_non_positive_score, bestvx, bestvy, routeobs, hitcuepointx, hitcuepointy,cue_obstacle)
-        #      ballcount,routenumber,hitcuepointx,hitcuepointy,objx,objy,best_virholex,best_virholey,target_hitx,target_hity,reflectionx,reflectiony
-        screen1(ballcount,routenumber,hitcuepointx,hitcuepointy,objhitpointxs,objhitpointys,ninehitpointxs,ninehitpointys,objx,objy,best_virholex,best_virholey,final_hitpointx,final_hitpointy,_,_,)
-        return max_non_positive_score, bestvx, bestvy, routeobs, hitcuepointx, hitcuepointy
+            obj_hole_angles.append(obj_hole_angle)
+        if cue_obj_angle < 0 and obj_hole_angles[i] < 0:
+            judge_nine_way=True
+    print("cue-nine-angle",cue_obj_angle)
+    print("obj-hole_angle",obj_hole_angles)
+    print("nine_way",judge_nine_way)
+    if judge_nine_way==True:
+        routenumber=1.1
+        for i in range(6):
+            cuetoobjdis, objtocuex, objtocuey = distance_and_vector(cuex, cuey, ninex,niney)
+            obj_ninedis,_,_=distance_and_vector(objx,objy,ninex,niney)
+            ninetohole, _,_= distance_and_vector(objx, objy, vir_hole_positions[i][0], vir_hole_positions[i][1])
+            objtoholes.append(ninetohole)
+            vxs.append(objtocuex)
+            vys.append(objtocuey)
+            
+        #detect the obstacle on the route   
+        main1_1obstacles = target_hole(objhitpointxs, objhitpointys, ballcount, ballx_set, bally_set,6)
+        way1scores = []
+        for i in range(6):
+            way1score = cal_score(cuetoobjdis + objtoholes[i], obj_hole_angles[i], values1[i], main1_1obstacles[i])
+            way1scores.append(way1score)
+        print("way1scores",way1scores)
+        #judge the kiss nine ball
+        nine_to_hole_point=[]
+        for i in range(6):
+            nine_to_hole=calculate_aim_point(ninex,niney,vir_hole_positions[i][0],vir_hole_positions[i][1],radius)
+            nine_to_hole_point.append(nine_to_hole)
+        
+        #pick the biggest and negative score(def)
+        non_positive_scores = [score for score in way1scores if score <= 0]
+        if non_positive_scores:
+            max_non_positive_score = max(non_positive_scores)
+            best_index = way1scores.index(max_non_positive_score)
+            best_virholex = vir_hole_positions[best_index][0]
+            best_virholey = vir_hole_positions[best_index][1]
+            first_hitpointx = obj_ninehitpointxs[best_index]
+            first_hitpointy = obj_ninehitpointys[best_index]
+            final_hitpointx = ninehitpointxs[best_index]
+            final_hitpointy = ninehitpointys[best_index]
+            bestvx = vxs[best_index]
+            bestvy = vys[best_index]
+            routeobs = main1_1obstacles[best_index]
+            hitcuepointx, hitcuepointy = calculate_aim_point(cuex, cuey, final_hitpointx, final_hitpointy, radius)
+            finalobsx = []
+            finalobsy = []
+            countobs = 0
+            for i in range(ballcount):
+                countobs, px, py = point_to_line_distance(ballx_set[i], bally_set[i], objx, objy, best_virholex, best_virholey, 2 * radius, i, 1, countobs)
+                if px > 0:
+                    finalobsx.append(px)
+                    finalobsy.append(py)
+            cue_obstacle=edge_detect(hitcuepointx,hitcuepointy)
+            final(routenumber,max_non_positive_score, bestvx, bestvy, routeobs, hitcuepointx, hitcuepointy,cue_obstacle)
+            print("nine_way",judge_nine_way)
+            linexs=[cuex,first_hitpointx,final_hitpointx,best_virholex]
+            lineys=[cuey,first_hitpointy,final_hitpointy,best_virholey]
+            screen2(ballcount,routenumber,3,linexs,lineys,obj_ninehitpointxs,obj_ninehitpointys,ninehitpointxs,ninehitpointys,cuex,cuey,objx,objy,ninex,niney)
+            # screen1(ballcount,routenumber,obj_ninehitpointx,ninehitpointys,obj_ninehitpointxs,obj_ninehitpointys,ninehitpointxs,ninehitpointys,objx,objy,best_virholex,best_virholey,final_hitpointx,final_hitpointy,objx,objy)
+            return max_non_positive_score, bestvx, bestvy, routeobs, hitcuepointx, hitcuepointy
+        else:
+            return method1(cuex, cuey, objx, objy, ninex,niney,objhitpointxs, objhitpointys,ninehitpointxs,ninehitpointys,values1, ballx_set, bally_set, ballcount)
+    # else if:
+    #     routenumber=1.2
+#calculate the distance(cue,obj,holes)
     else:
-        return main2(screen,cuex, cuey, objx, objy, ninex,niney,objhitpointxs, objhitpointys,ninehitpointxs,ninehitpointys, ballx_set, bally_set, ballcount)
+        routenumber=1
+        for i in range(6):
+            cuetoobjdis, objtocuex, objtocuey = distance_and_vector(cuex, cuey, objhitpointxs[i],objhitpointys[i])
+            objtohole, _,_= distance_and_vector(objx, objy, vir_hole_positions[i][0], vir_hole_positions[i][1])
+            objtoholes.append(objtohole)
+            vxs.append(objtocuex)
+            vys.append(objtocuey)
+        #calculate the angle(cue,obj)
+        cue_obj_holeangle = []
+        for i in range(6):
+            cue_obj_hole1 = vector_angle(cuex, cuey, objx, objy, vir_hole_positions[i][0], vir_hole_positions[i][1])
+            if cue_obj_hole1 < 100:
+                cue_obj_holeangle.append(-cue_obj_hole1)
+            else:
+                cue_obj_holeangle.append(cue_obj_hole1)
+        print("cue_obj_hole_angle",cue_obj_holeangle)
+        #detect the obstacle on the route
+        main1obstacles = target_hole(objhitpointxs, objhitpointys, ballcount, ballx_set, bally_set,6)
+        way1scores = []
+        for i in range(6):
+            way1score = cal_score(cuetoobjdis + objtoholes[i], cue_obj_holeangle[i], values1[i], main1obstacles[i])
+            way1scores.append(way1score)
+        print("way1score",way1scores)
+        #judge the kiss nine ball
+        nine_to_hole_point=[]
+        for i in range(6):
+            nine_to_hole=calculate_aim_point(ninex,niney,vir_hole_positions[i][0],vir_hole_positions[i][1],radius)
+            nine_to_hole_point.append(nine_to_hole)
+        
+        #pick the biggest and negative score
+        non_positive_scores = [score for score in way1scores if score <= 0]
+        if non_positive_scores:
+            max_non_positive_score = max(non_positive_scores)
+            best_index = way1scores.index(max_non_positive_score)
+            best_virholex = vir_hole_positions[best_index][0]
+            best_virholey = vir_hole_positions[best_index][1]
+            final_hitpointx = objhitpointxs[best_index]
+            final_hitpointy = objhitpointys[best_index]
+            bestvx = vxs[best_index]
+            bestvy = vys[best_index]
+            routeobs = main1obstacles[best_index]
+            hitcuepointx, hitcuepointy = calculate_aim_point(cuex, cuey, final_hitpointx, final_hitpointy, radius)
+            finalobsx = []
+            finalobsy = []
+            countobs = 0
+            for i in range(ballcount):
+                countobs, px, py = point_to_line_distance(ballx_set[i], bally_set[i], objx, objy, best_virholex, best_virholey, 2 * radius, i, 1, countobs)
+                if px > 0:
+                    finalobsx.append(px)
+                    finalobsy.append(py)
+            cue_obstacle=edge_detect(hitcuepointx,hitcuepointy)
+            final(routenumber,max_non_positive_score, bestvx, bestvy, routeobs, hitcuepointx, hitcuepointy,cue_obstacle)
+            linexs=[cuex,final_hitpointx,best_virholex]
+            lineys=[cuey,final_hitpointy,best_virholey]
+            screen2(ballcount,routenumber,2,linexs,lineys,objhitpointxs,objhitpointys,ninehitpointxs,ninehitpointys,cuex,cuey,objx,objy,ninex,niney)
+            return max_non_positive_score, bestvx, bestvy, routeobs, hitcuepointx, hitcuepointy
+        else:
+            return main2(cuex, cuey, objx, objy, ninex,niney,objhitpointxs, objhitpointys,ninehitpointxs,ninehitpointys, ballx_set, bally_set, ballcount)
 
 def mirror_point(line_m, line_b, point):
     x1, y1 = point
@@ -296,8 +403,8 @@ def main2(cuex, cuey, objx, objy,ninex,niney ,objhitpointxs, objhitpointys,nineh
         for j in range(0,6):
             value2=0
             for k in range(1,ballcount):
-                value2,z,z=point_to_line_distance(ballx_set[k],bally_set[k],cuex,cuey,reflection_pointx_group[i][j],reflection_pointy_group[i][j],2*radius+2,i+1,j,value2)
-                value2,z,z=point_to_line_distance(ballx_set[k],bally_set[k],objhitpointxs[i],objhitpointys[i],reflection_pointx_group[i][j],reflection_pointy_group[i][j],2*radius+2,i+1,j,value2)
+                value2,z,z=point_to_line_distance(ballx_set[k],bally_set[k],cuex,cuey,reflection_pointx_group[i][j],reflection_pointy_group[i][j],2*radius+1,i+1,j,value2)
+                value2,z,z=point_to_line_distance(ballx_set[k],bally_set[k],objhitpointxs[i],objhitpointys[i],reflection_pointx_group[i][j],reflection_pointy_group[i][j],2*radius+1,i+1,j,value2)
             # if objhitpointxs[i]==virholex[i] and objhitpointys[i]==virholey[i]:
             #     value2+1
             values2.append(value2)
@@ -307,7 +414,7 @@ def main2(cuex, cuey, objx, objy,ninex,niney ,objhitpointxs, objhitpointys,nineh
         cue_obj_holeangle2=[]
         for j in range(0,6):
             cue_obj_hole1=vector_angle(reflection_pointx_group[i][j],reflection_pointy_group[i][j],objx,objy,virholex[j],virholey[j])
-            if cue_obj_hole1>90:
+            if cue_obj_hole1<90:
                 cue_obj_holeangle2.append(-cue_obj_hole1)
             else:
                 cue_obj_holeangle2.append(cue_obj_hole1)
@@ -356,15 +463,17 @@ def main2(cuex, cuey, objx, objy,ninex,niney ,objhitpointxs, objhitpointys,nineh
         finalobsx = []
         finalobsy = []
         countobs = 0
-        for i in range(1, ballcount):
-            countobs, px, py = point_to_line_distance(ballx_set[i], bally_set[i], objx, objy, best_virholex, best_virholey, 2 * radius, i, best_index2 + 1, countobs)
+        for i in range(ballcount):
+            countobs, px, py = point_to_line_distance(ballx_set[i], bally_set[i], objx, objy, best_virholex, best_virholey, 2 * radius-1, i, best_index2 + 1, countobs)
             if px > 0:
                 finalobsx.append(px)
                 finalobsy.append(py)
         hitcuepointx,hitcuepointy=calculate_aim_point(cuex,cuey,reflectionx,reflectiony,radius)
         cue_obstacle=edge_detect(hitcuepointx,hitcuepointy)
         final(routenumber,bestscore,bestvx,bestvy,countobs,hitcuepointx,hitcuepointy,cue_obstacle)
-        screen1(ballcount,routenumber,hitcuepointx,hitcuepointy,objhitpointxs,objhitpointys,ninehitpointxs,ninehitpointys,objx,objy,best_virholex,best_virholey,final_hitpointx,final_hitpointy,reflectionx,reflectiony)
+        linexs=[cuex,reflectionx,final_hitpointx,best_virholex]
+        lineys=[cuey,reflectiony,final_hitpointy,best_virholey]
+        screen2(ballcount,routenumber,3,linexs,lineys,objhitpointxs,objhitpointys,ninehitpointxs,ninehitpointys,cuex,cuey,objx,objy,ninex,niney)
         return bestscore, bestvx, bestvy, countobs, hitcuepointx,hitcuepointy
     return main3(cuex, cuey, objx, objy,ninex,niney,objhitpointxs,objhitpointys,ninehitpointxs,ninehitpointys, ballx_set, bally_set, ballcount)
     
@@ -390,8 +499,8 @@ def main3(cuex, cuey, objx, objy,ninex,niney,objhitpointxs, objhitpointys,ninehi
     values4=[]
     for j in range(2):
         value4=0
-        for i in range(1,ballcount):
-            value4,_,_=point_to_line_distance(ballx_set[i],bally_set[i],cuex,cuey,second_cue_pointx[j],second_cue_pointy[j],2*radius,i,j,value4)
+        for i in range(ballcount):
+            value4,_,_=point_to_line_distance(ballx_set[i],bally_set[i],cuex,cuey,second_cue_pointx[j],second_cue_pointy[j],2*radius-1,i,j,value4)
         values4.append(value4)
     way3scores2=[]
     for i in range(2):
@@ -414,20 +523,24 @@ def main3(cuex, cuey, objx, objy,ninex,niney,objhitpointxs, objhitpointys,ninehi
         cue_obstacle=edge_detect(hitcuepointx,hitcuepointy)
         final(routenumber,max_non_positive_score, bestvx, bestvy,routeobs, hitcuepointx, hitcuepointy,cue_obstacle)
         print(values4)
+        linexs=[cuex,final_hitpointx]
+        lineys=[cuey,final_hitpointy]
         #ballcount,routenumber,hitcuepointx,hitcuepointy,objx,objy,best_virholex,best_virholey,target_hitx,targethity,reflectionx,reflectiony
-        screen1(ballcount,routenumber,hitcuepointx,hitcuepointy,objhitpointxs,objhitpointys,ninehitpointxs,ninehitpointys,objx,objy,objx,objy,final_hitpointx,final_hitpointy,objx,objy)
+        screen2(ballcount,routenumber,1,linexs,lineys,objhitpointxs,objhitpointys,ninehitpointxs,ninehitpointys,cuex,cuey,objx,objy,ninex,niney)
         return max_non_positive_score, bestvx, bestvy, cue_obstacle, hitcuepointx, hitcuepointy
     else:
         routenumber=4
         routeobs=values4[1]
-        final_hitpointx=second_cue_pointx[1]
-        final_hitpointy=second_cue_pointy[1]
+        final_hitpointx=objhitpointxs[1]
+        final_hitpointy=objhitpointys[1]
         hitcuepointx, hitcuepointy = calculate_aim_point(cuex, cuey, final_hitpointx, final_hitpointy, radius)
         cue_obstacle=edge_detect(hitcuepointx,hitcuepointy)
         final(routenumber,way3scores[1],cue_obj_vxs[1],cue_obj_vys[1],"x", hitcuepointx, hitcuepointy,cue_obstacle)
         #ballcount,routenumber,hitcuepointx,hitcuepointy,objx,objy,best_virholex,best_virholey,target_hitx,targethity,reflectionx,reflectiony
         print(values4)
-        screen(ballcount,routenumber,hitcuepointx,hitcuepointy,objhitpointxs,objhitpointys,ninehitpointxs,ninehitpointys,objy,objx,objy,second_cue_pointx[1],second_cue_pointy[1],objx,objy)
+        linexs=[cuex,final_hitpointx]
+        lineys=[cuey,final_hitpointy]
+        screen2(ballcount,routenumber,1,linexs,lineys,objhitpointxs,objhitpointys,ninehitpointxs,ninehitpointys,cuex,cuey,objx,objy,ninex,niney)
         return way3scores[1],cue_obj_vxs[1],cue_obj_vys,values4[1],cue_obstacle,hitcuepointx,hitcuepointy
 
     
@@ -446,9 +559,9 @@ def vector_angle(n1x, n1y, n2x, n2y, n3x, n3y):
 
 def cal_score(distance, angle, cue_objobs, obj_holeobs):
     score = ((angle * -22) + (distance * -1) + (obj_holeobs * -4000))
-    if angle < 0:
+    if angle > 0:
         score = abs(score)
-    elif cue_objobs > 0:
+    if cue_objobs > 0:
         score = abs(score)
     return score
 
@@ -456,8 +569,8 @@ def edge_detect(hitcuepointx,hitcuepointy):
     cue_obstacle=0
     if hitcuepointx - radius < x1 or hitcuepointx + radius > x1 + width or hitcuepointy - radius < y1 or hitcuepointy + radius > y1 + height:
         return True
-    for i in range(1,ballcount):
-        cue_obstacle,_,_=point_to_line_distance(ballx_set[i],bally_set[i],hitcuepointx,hitcuepointy,cuex,cuey,2*radius,i,1,cue_obstacle)
+    for i in range(ballcount):
+        cue_obstacle,_,_=point_to_line_distance(ballx_set[i],bally_set[i],hitcuepointx,hitcuepointy,cuex,cuey,2*radius-1,i,1,cue_obstacle)
         return True
     return False
 
@@ -465,7 +578,7 @@ def target_hole(objhitpointxs, objhitpointys, ballcount, ballx_set, bally_set,hi
     obstacles = []
     for i in range(hitpoint_count):
         count = 0
-        for j in range(1, ballcount):
+        for j in range(ballcount):
             count, _, _ = point_to_line_distance(ballx_set[j], bally_set[j], objhitpointxs[i], objhitpointys[i], vir_hole_positions[i][0], vir_hole_positions[i][1], 2 * radius, i + 1, j, count)
         obstacles.append(count)
     return obstacles
@@ -481,61 +594,58 @@ def final(routenumber,bestscore,bestvx,bestvy,obstacle,bestx,besty,cue_obstacle)
     print("there have obstacle around cue",cue_obstacle)
     # return ballx_set,bally_set,ballcount,cu
     # ex,cuey,bestscore, bestvx, bestvy, countobs, final_hitpointx, final_hitpointy,x,y
-
-def screen1(ballcount,routenumber,hitcuepointx,hitcuepointy,objhitpointxs,objhitpointys,ninehitpointxs,ninehitpointys,objx,objy,best_virholex,best_virholey,target_hitx,target_hity,reflectionx,reflectiony):
+def screen2(ballccout,routenumber,linecount,linexs,lineys,objhitpointxs,objhitpointys,ninehitpointxs,ninehitpointys,cuex,cuey,objx,objy,ninex,niney):
     plt.title('Basic Plot in Matplotlib')
     plt.xlabel('X Axis Label')
     plt.ylabel('Y Axis Label')
     plt.grid()
     plt.plot([holex[0],holex[2]],[holey[0],holey[2]],[holex[2],holex[5]],[holey[2],holey[5]],
              [holex[5],holex[3]],[holey[5],holey[3]],[holex[3],holex[0]],[holey[3],holey[0]],color='black')
+    print(linexs)
+    print(lineys)
+    for i in range(linecount):
+       plt.plot((linexs[i],linexs[i+1]),(lineys[i],lineys[i+1]), linestyle = '-') 
+    plt.plot(objx,objy,marker='o',ms=radius,color='yellow')
+    plt.plot(cuex,cuey,marker='o',ms=radius,color='red')
+    plt.plot(ninex,niney,marker='o',ms=radius,color='pink')
+    for i in range(1,ballcount-1):
+        plt.plot(ballx_set[i],bally_set[i],marker='o',ms=radius,color='blue')
     for i in range(6):
         plt.plot(hole_positions[i][0],hole_positions[i][1],marker = 'o',ms=holeradius,color='black')
         plt.plot(vir_hole_positions[i][0],vir_hole_positions[i][1],marker = 'o',ms=holeradius,color='black')
         plt.plot(objhitpointxs[i],objhitpointys[i],marker = 'o',ms=3,color='green')
         plt.plot(ninehitpointxs[i],ninehitpointys[i],marker = 'o',ms=3,color='green')
-    for i in range(1,ballcount-1):
-        plt.plot(ballx_set[i],bally_set[i],marker='o',ms=radius,color='blue')
-    plt.plot(objx,objy,marker='o',ms=radius,color='yellow')
-    plt.plot(cuex,cuey,marker='o',ms=radius,color='red')
-    plt.plot(ballx_set[ballcount-1],bally_set[ball_count-1],marker='o',ms=radius,color='pink')
-    if routenumber==1:
-        plt.plot([cuex,target_hitx],[cuey,target_hity], linestyle = '-') 
-        plt.plot([objx,best_virholex],[objy,best_virholey], linestyle = '-') 
-    elif routenumber==3 or routenumber==4:
-        plt.plot([cuex,target_hitx],[cuey,target_hity], linestyle = '-') 
-    elif routenumber==2:
-        plt.plot([cuex,reflectionx],[cuey,reflectiony],linestyle = '-')
-        plt.plot([reflectionx,target_hitx],[reflectiony,target_hity],linestyle = '-')
-        plt.plot([objx,best_virholex],[objy,best_virholey],linestyle = '-')
     plt.show()
         
+        
 def main(ballx_set,bally_set,ballcount,cuex,cuey):
-    while True:                    
-        objhitpointxs= []
-        objhitpointys = []
-        ninehitpointxs=[]
-        ninehitpointys=[]
-        for i in range(6):
-            hitpointx, hitpointy = calculate_aim_point(ballx_set[0], bally_set[0], vir_hole_positions[i][0], vir_hole_positions[i][1], radius)
-            ninehitpointx,ninehitpointy=calculate_aim_point(ballx_set[ballcount-1],bally_set[ballcount-1],vir_hole_positions[i][0], vir_hole_positions[i][1], radius)
-            objhitpointxs.append(hitpointx)
-            objhitpointys.append(hitpointy)
-            ninehitpointxs.append(ninehitpointx)
-            ninehitpointys.append(ninehitpointy)
-        #cue_target ball obstacle count
-        values1 = []
-        for i in range(6):
-            value1 = 0
-            for j in range(1, ballcount):
-                value1, _, _ = point_to_line_distance(ballx_set[j], bally_set[j], cuex, cuey, objhitpointxs[i], objhitpointys[i], 2 * radius, "cue", j, value1)
-            values1.append(value1)
-        route = any(v == 0 for v in values1)
-        if route:
-            return methond1(cuex, cuey, ballx_set[0], bally_set[0],ballx_set[ballcount-1],bally_set[ballcount-1], objhitpointxs, objhitpointys,ninehitpointxs,ninehitpointys, values1, ballcount, ballx_set, bally_set)
-        else:
-            return main2(cuex, cuey, ballx_set[0], bally_set[0], ballx_set[ballcount-1],bally_set[ballcount-1],objhitpointxs, objhitpointys,ninehitpointxs,ninehitpointys,ballx_set, bally_set, ballcount,)
-
+    route=[]
+    objhitpointxs= []
+    objhitpointys = []
+    ninehitpointxs=[]
+    ninehitpointys=[]
+    for i in range(6):
+        hitpointx, hitpointy = calculate_aim_point(ballx_set[0], bally_set[0], vir_hole_positions[i][0], vir_hole_positions[i][1], radius)
+        ninehitpointx,ninehitpointy=calculate_aim_point(ballx_set[ballcount-1],bally_set[ballcount-1],vir_hole_positions[i][0], vir_hole_positions[i][1], radius)
+        objhitpointxs.append(hitpointx)
+        objhitpointys.append(hitpointy)
+        ninehitpointxs.append(ninehitpointx)
+        ninehitpointys.append(ninehitpointy)
+    #cue_target ball obstacle count
+    values1 = []
+    first_route_judge=False
+    for i in range(6):
+        value1 = 0
+        for j in range(1,ballcount):
+            value1, _, _ = point_to_line_distance(ballx_set[j], bally_set[j], cuex, cuey, objhitpointxs[i], objhitpointys[i], 2 * radius, "cue", j, value1)
+        if value1==0:
+            first_route_judge=True
+        values1.append(value1)
+    print("first_route_choice",values1,first_route_judge)
+    if first_route_judge==True:
+        return method1(cuex, cuey, ballx_set[0], bally_set[0],ballx_set[ballcount-1],bally_set[ballcount-1], objhitpointxs, objhitpointys,ninehitpointxs,ninehitpointys, values1, ballcount, ballx_set, bally_set)
+    else:
+        return main2(cuex, cuey, ballx_set[0], bally_set[0], ballx_set[ballcount-1],bally_set[ballcount-1],objhitpointxs, objhitpointys,ninehitpointxs,ninehitpointys,ballx_set, bally_set, ballcount,)
 
 if __name__ == '__main__':
     balls=[]
