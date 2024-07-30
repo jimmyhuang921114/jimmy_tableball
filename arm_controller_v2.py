@@ -15,7 +15,7 @@ import numpy as np
 import math
 import quaternion as qtn
 import hiwin_control.transformations as transformations
-import hiwin_control.just_pool_think0601 as think
+import hiwin_control.just_pool_think0709 as think
 import matplotlib.pyplot as plt
 
 
