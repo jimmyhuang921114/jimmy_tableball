@@ -6,7 +6,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from shapely.geometry import Polygon, Point, LineString
 #inital condition
-actual_width = 62.7
+actual_width = 62.7 
 actual_height = 30.4
 #virtual height width
 # width = 627
@@ -15,11 +15,11 @@ height=304
 radius = 16
 hole_radius = 20
 # Table coordinates
-x1 = -311
-y1 = 612
+# x1 = -311
+# y1 = 612
+x1=100
+y1=100
 hole_positions = [(x1, y1), (x1 + width / 2, y1), (x1 + width, y1),(x1, y1 + height), (x1 + width / 2, y1 + height), (x1 + width, y1 + height)]
-
-
 
 vir_hole_positions=[(x1+radius,y1+height-radius),(x1+width/2,y1+height-radius),(x1+width-radius,y1+height-radius),(x1+radius,y1+radius),(x1+width/2,y1+radius),(x1-radius+width,y1+radius)]
 actualwidth =62.7
@@ -99,7 +99,7 @@ def calculate_aim_point(target_point,obj_point, ball_diameter):
 
 
 def check_obstacle_ball(obs_ball, obj_point, target_point, obs_count):
-    maskwidth = 2*radius+3
+    maskwidth = 1.5*radius
     n1x, n1y = target_point
     n2x, n2y = obj_point
     vectorx = n1x - n2x
@@ -233,7 +233,7 @@ class method_choice():
         (x1+width,y1,x1+width,y1+height,cuex,cuey)  # right
         ]
         self.slope=[0,0,'inf','inf']
-        self.wall_side=[x1,x1+height,y1,y1+width]
+        self.wall_side = [x1,x1+height,y1,y1+width]
         
     def edge_detect(self,best_cue_hitpoint):
         hitcuepointx,hitcuepointy=best_cue_hitpoint
@@ -322,11 +322,9 @@ class method_choice():
             for j in range(6):
                 temp1mirror=mirror_point(self.slope[i],self.wall_side[i],self.obj_nines_hitpoints[j])
                 temp1_1mirror=mirror_point(self.slope[i],self.wall_side[i],self.obj_holes_hitpoints[j])
-                temp1reflection=segment_intersection(self.boundaries[i],temp1_1mirror[0],temp1_1mirror[1])
-                temp1_1reflection=segment_intersection(self.boundaries[i],temp1mirror[0],temp1mirror[1])
-                plt.plot(self.obj_holes_hitpoints[i][0],self.obj_holes_hitpoints[i][1],marker='o',ms=3,color='blue')
-                plt.plot(temp1_1reflection[0],temp1_1reflection[1],marker='o',ms=3,color='red')
-                plt.plot(temp1reflection[0],temp1reflection[1],marker='o',ms=3,color='red')
+                temp1reflection=segment_intersection(*self.boundaries[i],temp1_1mirror[0],temp1_1mirror[1])
+                temp1_1reflection=segment_intersection(*self.boundaries[i],temp1mirror[0],temp1mirror[1])
+
                 temp2reflection_obj.append(temp1reflection)
                 temp2reflection_obj_nine.append(temp1_1reflection)
             self.reflection_obj_nine_points.append(temp2reflection_obj_nine)   
@@ -401,7 +399,7 @@ class method_choice():
         for i in range(6):
             temp1obs=0
 
-            for j in range(1,len(self.positions)):
+            for j in range(1,len(self.positions)-1):
 
                 temp1obs,_=check_obstacle_ball(self.positions[j],self.obj,self.obj_nines_hitpoints[i],temp1obs)
                 temp1obs,_=check_obstacle_ball(self.positions[j],self.nine,self.nine_holes_hitpoints[i],temp1obs)
@@ -620,15 +618,17 @@ class method_choice():
                 temp1obj_nine_obs,_=check_obstacle_ball(self.positions[k],self.cue,self.obj_nines_hitpoints[i],temp1obj_nine_obs)
                 temp1obj_nine_obs,_=check_obstacle_ball(self.positions[k],self.obj,self.nine_holes_hitpoints[i],temp1obj_nine_obs)
                 temp1obj_nine_obs,_=check_obstacle_ball(self.positions[k],self.nine,vir_hole_positions[i],temp1obj_nine_obs)
-                temp1obj_nine_hole=vector_angle(self.obj,self.nine_holes_hitpoints[i],vir_hole_positions[i])
-                obj_nine_holes_angles.append(temp1obj_nine_hole)
+                
             obj_nines_obs.append(temp1obj_nine_obs)
         cue_obj_nine_reflec_diss=[]
         method2_1scores=[]
         hit_vectors=[]
+        reflection_obj_nine_angles=[]
         #---------------distance-----------------#
         for j in range(4):
             cue_obj_nine_reflec_dis1=[]
+            temp2reflection_obj_nine_angle=[]
+            
             for i in range(6):
                 cue_reflec1_dis,hit_vector=distance_and_vector(self.cue,self.reflection_obj_nine_points[j][i])
                 hit_vectors.append(hit_vector)
@@ -636,6 +636,11 @@ class method_choice():
                 obj_nine_dis,_=distance_and_vector(self.nine,self.nine_holes_hitpoints[i])
                 nine_hole_dis,_=distance_and_vector(self.nine,vir_hole_positions[i])
                 cue_obj_nine_reflec_dis1.append(cue_reflec1_dis+reflec1_obj_dis+obj_nine_dis+nine_hole_dis)
+                temp1reflection_obj_nine=vector_angle(self.reflection_obj_nine_points[j][i],self.obj_nines_hitpoints[i],self.nine_holes_hitpoints[i])
+                temp2reflection_obj_nine_angle.append(temp1reflection_obj_nine)
+                temp1obj_nine_hole=vector_angle(self.obj,self.nine_holes_hitpoints[i],vir_hole_positions[i])
+                obj_nine_holes_angles.append(temp1obj_nine_hole)
+            reflection_obj_nine_angles.append(temp2reflection_obj_nine_angle)
             cue_obj_nine_reflec_diss.append(cue_obj_nine_reflec_dis1)
         #-------------score--------------------#
         method2_1_judge=False
@@ -643,7 +648,7 @@ class method_choice():
         for i in range(4):
             temp2scores=[]
             for j in range(6):
-                temp1score=cal_score(cue_obj_nine_reflec_diss[i][j],obj_nines_obs[i],obj_nine_holes_angles[i],-1,1)
+                temp1score=cal_score(cue_obj_nine_reflec_diss[i][j],obj_nines_obs[i],obj_nine_holes_angles[i],reflection_obj_nine_angles[i][j],2)
                 temp2scores.append(temp1score)
                 if temp1score < 0:
                     method2_1_judge=True
@@ -681,9 +686,10 @@ class method_choice():
         cue_relfec_obj_hole_diss=[]
         method2=False
         #------------------obs,angle--------------------#
-        for i in range(6):
-             cue_obj_hole_angle=vector_angle(self.cue,self.obj_holes_hitpoints[i],vir_hole_positions[i])
-             cue_obj_holes_angle.append(cue_obj_hole_angle)
+        for j in range(4):
+            for i in range(6):
+                cue_obj_hole_angle=vector_angle(self.reflection_obj_points[j][i],self.obj_holes_hitpoints[i],vir_hole_positions[i])
+                cue_obj_holes_angle.append(cue_obj_hole_angle)
         #------------------distance,score--------#
         cue_relfec_obj_hole_diss2=[]
         for i in range(4):
@@ -854,7 +860,6 @@ class method_choice():
                     for k in range(6):  
                         mirror_obj_part=mirror_point(self.slope[i],self.wall_side[i],self.cue_obj_others_hitpoints[j][k])
                         temp1reflection_point=segment_intersection(*self.boundaries[i],mirror_obj_part[0],mirror_obj_part[1])
-                        plt.plot(temp1reflection_point[0],temp1reflection_point[1],marker='o',ms=3,color='green')
                         temp2reflection_point.append(temp1reflection_point)
                     method3_2_reflection_point.append(temp2reflection_point)
             for i in range(0,ballcount-2):
