@@ -17,8 +17,8 @@ hole_radius = 20
 # Table coordinates
 x1 = -311.196
 y1 = 612
-# x1=-100
-# y1=100
+# x1=-303.936
+# y1=575.677
 hole_positions = [(x1, y1),(x1, y1-height), (x1 + width / 2, y1- height), (x1 + width, y1-height),(x1+width, y1), (x1 + width / 2, y1)]
 vir_hole_positions = [(x1+radius, y1-radius),(x1+radius, y1-height+radius), (x1 + width / 2, y1- height+radius), (x1 + width-radius, y1-height+radius),(x1+width-radius, y1-radius), (x1 + width / 2, y1-radius)]
 holex=[x1,x1,x1+width,x1+width,x1+width,x1+width]
@@ -192,16 +192,17 @@ def screen2(ballcount,routenumber,cue,obj,nine,ball_position):
     # plt.plot([holex[0],holex[2]],[holey[0],holey[2]],[holex[2],holex[5]],[holey[2],holey[5]],
     #          [holex[5],holex[3]],[holey[5],holey[3]],[holex[3],holex[0]],[holey[3],holey[0]],color='black')
     plt.plot([holex[0],holex[5]],[holey[0],holey[5]],[holex[5],holex[3]],[holey[5],holey[3]],[holex[3],holex[1]],[holey[3],holey[1]],[holex[1],holex[0]],[holey[1],holey[0]],color='black')
-    plt.plot(obj[0],obj[1],marker='o',ms=2*radius,color='yellow')
-    plt.plot(cue[0],cue[1],marker='o',ms=2*radius,color='red')
-    plt.plot(nine[0],nine[1],marker='o',ms=2*radius,color='pink')
+    plt.gca().add_patch(plt.Circle((obj[0], obj[1]), radius, color='yellow'))
+    plt.gca().add_patch(plt.Circle((cue[0], cue[1]), radius, color='red'))
+    plt.gca().add_patch(plt.Circle((nine[0], nine[1]), radius, color='pink'))
+    # plt.gca().add_patch(plt.Circle((aimpointx[0], left_reflect_point_y[i]), 3, color='red'))
     
     for i in range(1,ballcount-1):
-        plt.plot(ballx_set[i],bally_set[i],marker='o',ms=2*radius,color='blue')
+        plt.gca().add_patch(plt.Circle((ballx_set[i],bally_set[i]), radius, color='blue'))
         plt.text(ballx_set[i], bally_set[i], ((ballx_set[i],bally_set[i]),i+1),color='black', fontweight='bold')
     for i in range(6):
-        plt.plot(hole_positions[i][0],hole_positions[i][1],marker = 'o',ms=2*hole_radius,color='black')
-        plt.plot(vir_hole_positions[i][0],vir_hole_positions[i][1],marker = 'o',ms=2*hole_radius,color='black')
+        plt.gca().add_patch(plt.Circle((hole_positions[i][0],hole_positions[i][1]), radius, color='black'))
+        plt.gca().add_patch(plt.Circle((vir_hole_positions[i][0],vir_hole_positions[i][1]), radius, color='black'))
     plt.show()
     
 def find_min_negative_integer_in_nested_list(lst):
@@ -222,7 +223,7 @@ def find_min_negative_integer_in_nested_list(lst):
 class method_choice():
     def __init__(self,ballx_set,bally_set,ballcount,cuex,cuey):
         self.cue=(cuex,cuey)
-        self.nine=(ballx_set[ballcount],bally_set[ballcount])
+        self.nine=(ballx_set[ballcount-1],bally_set[ballcount-1])
         self.obj=(ballx_set[0],bally_set[0])
         self.ballcount=ballcount
         self.positions = [(ballx_set[i], bally_set[i]) for i in range(ballcount)]
@@ -400,7 +401,7 @@ class method_choice():
         for i in range(6):
             temp1obs=0
 
-            for j in range(1,len(self.positions)-1):
+            for j in range(1,self.ballcount-1):
 
                 temp1obs,_=check_obstacle_ball(self.positions[j],self.obj,self.obj_nines_hitpoints[i],temp1obs)
                 temp1obs,_=check_obstacle_ball(self.positions[j],self.nine,self.nine_holes_hitpoints[i],temp1obs)
@@ -451,12 +452,12 @@ class method_choice():
             
             cue_obstacle=method_choice.edge_detect(self,hitcuepoint)
             #----------screen-----------#
-            method_choice.final(self,route,max_non_positive_score, best_hit_vector[0], best_hit_vector[1], routeobs, hitcuepoint,cue_obstacle)
+            method_choice.final(self,route,max_non_positive_score, best_hit_vector[0], best_hit_vector[1], cue_obstacle, hitcuepoint,cue_obstacle)
             plt.plot([self.cue[0],first_hitpoint[0]],[self.cue[1],first_hitpoint[1]],linestyle='-')
             plt.plot([self.obj[0],second_hitpoint[0]],[self.obj[1],second_hitpoint[1]],linestyle='-')
             plt.plot([self.nine[0],best_virhole[0]],[self.nine[1],best_virhole[1]])
             screen2(self.ballcount,route,self.cue,self.obj,self.nine,self.positions)
-            return max_non_positive_score,best_hit_vector[0], best_hit_vector[1], routeobs, hitcuepoint[0], hitcuepoint[1]
+            return max_non_positive_score,best_hit_vector[0], best_hit_vector[1], cue_obstacle, hitcuepoint[0], hitcuepoint[1]
         else:
             return method_choice.method1_2(self)
         
@@ -481,7 +482,7 @@ class method_choice():
             temp2obs=[]
             for j in range(6):
                 temp1obs=0
-                for k in range(1,len(self.positions)):
+                for k in range(1,self.ballcount):
                     temp1obs,_=check_obstacle_ball(self.positions[k],self.cue,self.obj_nines_hitpoints[j],temp1obs)
                     temp1obs,_=check_obstacle_ball(self.positions[k],self.obj,reflection_obj_nine_points[i][j],temp1obs)
                     temp1obs,_=check_obstacle_ball(self.positions[k],reflection_obj_nine_points[i][j],self.nine,temp1obs)
@@ -538,20 +539,12 @@ class method_choice():
             best_hit_vector = hit_vectors[best_index2]
             routeobs = reflec_obj_nine_obs_group[best_index1][best_index2]
             around_cue_hitpoint_detect=method_choice.edge_detect(self,best_cue_hitpoint)
-            finalobs=[]
-            countobs = 0
-            # for i in range(self.ballcount):
-            #     countobs, px, py = point_to_line_distance(self.positions[i],self.obj)
-            #     if px > 0:
-            # #         finalobs.append((px,py))
-            # cue_obstacle=method_choice.edge_detect(best_cue_hitpoint)
-            # method_choice.final(route,max_non_positive_score, hit_vector[0], hit_vector[1], routeobs, best_cue_hitpoint[0],best_cue_hitpoint[1],cue_obstacle)
             plt.plot([self.cue[0],first_hitpoint[0]],[self.cue[1],first_hitpoint[1]],linestyle='-')
             plt.plot([self.obj[0],reflection_point[0]],[self.obj[1],reflection_point[1]],linestyle='-')
             plt.plot([reflection_point[0],second_hitpoint[0]],[reflection_point[1],second_hitpoint[1]],linestyle='-')
             plt.plot([self.nine[0],best_virhole[0]],[self.nine[1],best_virhole[1]])
             screen2(self.ballcount,route,self.cue,self.obj,self.nine,self.positions)
-            return max_non_positive_score,best_hit_vector[0], best_hit_vector[1], routeobs, best_cue_hitpoint[0], best_cue_hitpoint[1]
+            return max_non_positive_score,best_hit_vector[0], best_hit_vector[1], around_cue_hitpoint_detect, best_cue_hitpoint[0], best_cue_hitpoint[1]
         else:
             return method_choice.method1(self)    
         
@@ -576,7 +569,7 @@ class method_choice():
             cue_obj_holes_angle.append(cue_obj_hole_angle)
         for i in range(6):
             temp1obj_hole_obs=0
-            for j in range(1,len(self.positions)):
+            for j in range(1,self.ballcount):
                 temp1obj_hole_obs,_=check_obstacle_ball(self.positions[j],self.cue,self.obj_holes_hitpoints[i],temp1obj_hole_obs)
                 temp1obj_hole_obs,_=check_obstacle_ball(self.positions[j],self.obj,vir_hole_positions[i],temp1obj_hole_obs)
             obj_holes_obs.append(temp1obj_hole_obs)
@@ -602,13 +595,14 @@ class method_choice():
             best_hit_vector = cue_obj_vectors[best_index]
             routeobs = obj_holes_obs[best_index]
             around_cue_hitpoint_detect=method_choice.edge_detect(self,best_cue_hitpoint)
+
         # method_choice.final(self,route,best_score,best_hit_vector[0],best_hit_vector[1],routeobs,best_cue_hitpoint,around_cue_hitpoint_detect)
             plt.plot(best_cue_hitpoint[0],best_cue_hitpoint[1],marker='o',ms=3,color='red')
             plt.plot([self.cue[0],first_hitpoint[0]],[self.cue[1],first_hitpoint[1]],linestyle='-',color='red')
             plt.plot([self.obj[0],best_virhole[0]],[self.obj[1],best_virhole[1]],linestyle='-',color='red')
             method_choice.final(self,route,max_non_positive_score,best_hit_vector[0],best_hit_vector[1],routeobs,best_cue_hitpoint,around_cue_hitpoint_detect)
             screen2(self.ballcount,route,self.cue,self.obj,self.nine,self.positions)
-            return max_non_positive_score,-best_hit_vector[0], -best_hit_vector[1], routeobs, best_cue_hitpoint[0], best_cue_hitpoint[1]
+            return max_non_positive_score,-best_hit_vector[0], -best_hit_vector[1], around_cue_hitpoint_detect, best_cue_hitpoint[0], best_cue_hitpoint[1]
         else:
             return method_choice.method2(self)
     def method2_1(self):
@@ -674,7 +668,7 @@ class method_choice():
             plt.plot([self.obj[0],best_virhole[0]],[self.obj[1],best_virhole[1]],linestyle='-',color='red')
             method_choice.final(self,route,max_non_positive_score,best_hit_vector[0],best_hit_vector[1],routeobs,best_cue_hitpoint,around_cue_hitpoint_detect)
             screen2(self.ballcount,route,self.cue,self.obj,self.nine,self.positions)
-            return max_non_positive_score,hit_vector[0], hit_vector[1], routeobs, best_cue_hitpoint[0], best_cue_hitpoint[1]
+            return max_non_positive_score,hit_vector[0], hit_vector[1], around_cue_hitpoint_detect, best_cue_hitpoint[0], best_cue_hitpoint[1]
         else:
             
             return method_choice.method2(self)   
@@ -743,7 +737,7 @@ class method_choice():
             plt.plot([self.obj[0],best_virhole[0]],[self.obj[1],best_virhole[1]],linestyle='-',color='red')
             method_choice.final(self,route,max_non_positive_score,best_hit_vector[0],best_hit_vector[1],routeobs,best_cue_hitpoint,around_cue_hitpoint_detect)
             screen2(self.ballcount,route,self.cue,self.obj,self.nine,self.positions)
-            return max_non_positive_score,best_hit_vector[0], best_hit_vector[1], routeobs, best_cue_hitpoint[0], best_cue_hitpoint[1]
+            return max_non_positive_score,best_hit_vector[0], best_hit_vector[1], around_cue_hitpoint_detect, best_cue_hitpoint[0], best_cue_hitpoint[1]
         else:
             return method_choice.method3(self)
     def method3(self):
@@ -771,7 +765,7 @@ class method_choice():
                 temp2_1angle.append(temp1_1angle)
                 temp2angle.append(temp1angle)
                 temp1obs=0
-                for k in range(len(self.positions)):
+                for k in range(self.ballcount):
                     temp1obs,_=check_obstacle_ball(self.positions[k],self.cue,self.cue_obj_others_hitpoints[i][j],temp1obs)
                     temp1obs,_=check_obstacle_ball(self.positions[k],self.obj,self.others_hitpoints[i][j],temp1obs)
                     temp1obs,_=check_obstacle_ball(self.positions[k],self.positions[i],vir_hole_positions[j],temp1obs)
@@ -826,9 +820,9 @@ class method_choice():
             for i in range(0,self.ballcount-2):
                 for j in range(6):
                     plt.plot(self.cue_obj_others_hitpoints[i][j][0],self.cue_obj_others_hitpoints[i][j][1],marker='o',ms=3,color='yellow')
-            method_choice.final(self,route,max_non_positive_score,best_hit_vector[0],best_hit_vector[1],routeobs,hitcuepoint,around_cue_hitpoint_detect)
+            method_choice.final(self,route,max_non_positive_score,best_hit_vector[0],best_hit_vector[1],cue_obstacle,hitcuepoint,around_cue_hitpoint_detect)
             screen2(self.ballcount,route,self.cue,self.obj,self.nine,self.positions)
-            return max_non_positive_score,best_hit_vector[0], best_hit_vector[1], routeobs, hitcuepoint[0], hitcuepoint[1]
+            return max_non_positive_score,best_hit_vector[0], best_hit_vector[1], cue_obstacle, hitcuepoint[0], hitcuepoint[1]
         else:
             return method_choice.method3_2(self)
         
@@ -842,7 +836,7 @@ class method_choice():
             temp2=[]
             for j in range(6):
                 temp1=0
-                for k in range(1,len(self.positions)-1):
+                for k in range(1,self.ballcount-1):
                     temp1,_=check_obstacle_ball(self.positions[j],self.cue,self.cue_obj_others_hitpoints[i][j],temp1)
                 temp2.append(temp1)
                 if temp1==0:
@@ -886,7 +880,7 @@ class method_choice():
                     temp2dis.append(temp_dis_sum)
                     temp2vector.append(temp1vector)
                     temp1obs=0
-                    for k in range(1,len(self.positions)-1):
+                    for k in range(1,self.ballcount-1):
                         temp1obs,_=check_obstacle_ball(self.positions[k],self.cue,method3_2_reflection_point[i][j],temp1obs)
                         temp1obs,_=check_obstacle_ball(self.positions[k],method3_2_reflection_point[i][j],self.others_hitpoints[i][j],temp1obs)
                         temp1obs,_=check_obstacle_ball(self.positions[k],self.obj,self.cue_obj_others_hitpoints[i][j],temp1obs)
@@ -935,13 +929,13 @@ class method_choice():
                 plt.plot([reflection_point[0],first_hitpoint[0]],[reflection_point[1],first_hitpoint[1]],linestyle='-',color='red')
                 plt.plot([self.obj[0],second_hitpoint[0]],[self.obj[1],second_hitpoint[1]],linestyle='-',color='red')
                 plt.plot([third_ball[0],best_virhole[0]],[third_ball[1],best_virhole[1]],linestyle='-',color='red')
-                method_choice.final(self,route,max_non_positive_score,best_hit_vector[0],best_hit_vector[1],routeobs,best_cue_hitpoint,around_cue_hitpoint_detect)
+                method_choice.final(self,route,max_non_positive_score,best_hit_vector[0],best_hit_vector[1],around_cue_hitpoint_detect,best_cue_hitpoint,around_cue_hitpoint_detect)
                 screen2(self.ballcount,route,self.cue,self.obj,self.nine,self.positions)
-                return max_non_positive_score,best_hit_vector[0], best_hit_vector[1], routeobs, best_cue_hitpoint[0], best_cue_hitpoint[1]
+                return max_non_positive_score,best_hit_vector[0], best_hit_vector[1], around_cue_hitpoint_detect, best_cue_hitpoint[0], best_cue_hitpoint[1]
             else:
                 print("false")
                 screen2(self.ballcount,route,self.cue,self.obj,self.nine,self.positions)
-                # return False
+                return False
 if __name__== '__main__':
     balls=[]
     ballcount=8
