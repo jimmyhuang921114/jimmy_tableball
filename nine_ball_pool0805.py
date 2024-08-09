@@ -100,8 +100,8 @@ def calculate_aim_point(target_point,obj_point,empty1):
 
 
 
-def check_obstacle_ball(obs_ball, obj_point, target_point, obs_count):
-    maskwidth = 2*radius
+def check_obstacle_ball(obs_ball,obs_range, obj_point, target_point, obs_count):
+    maskwidth = 2.3*radius
     n1x, n1y = target_point
     n2x, n2y = obj_point
     vectorx = n1x - n2x
@@ -117,17 +117,21 @@ def check_obstacle_ball(obs_ball, obj_point, target_point, obs_count):
     third_poly = second_poly + vector
     fourth_poly = first_poly + vector
     ploy = (first_poly, second_poly, third_poly, fourth_poly)
-
-    polygon = Polygon(ploy)
-    shapely_objectballs = Point(obs_ball[0], obs_ball[1])
     # plt.plot([first_poly[0],second_poly[0]],[first_poly[1],second_poly[1]],linestyle='-')
     # plt.plot([second_poly[0],third_poly[0]],[second_poly[1],third_poly[1]],linestyle='-')
     # plt.plot([third_poly[0],fourth_poly[0]],[third_poly[1],fourth_poly[1]],linestyle='-')
     # plt.plot([fourth_poly[0],first_poly[0]],[fourth_poly[1],first_poly[1]],linestyle='-')
-    if polygon.contains(shapely_objectballs):
-        obs_count =obs_count+1
-        return obs_count, obs_ball
-    return obs_count, -1
+    polygon = Polygon(ploy)
+    obs_ball_set=[]
+    for i in range(obs_range):
+        shapely_objectballs = Point(obs_ball[i])
+        
+    
+
+        if polygon.contains(shapely_objectballs):
+            obs_count =obs_count+1
+            obs_ball_set.append(obs_ball)
+    return obs_count, obs_ball_set
 
 def vector_angle(point1,point2,point3):
     n1x, n1y = point1
@@ -245,8 +249,8 @@ class method_choice():
         cue_obstacle=0
         if hitcuepointx - radius < x1 or hitcuepointx + radius > x1 + width or hitcuepointy - radius < y1 or hitcuepointy + radius > y1 + height:
             return True
-        for i in range(self.ballcount):
-            cue_obstacle,_=check_obstacle_ball(self.positions[i],self.cue,best_cue_hitpoint,cue_obstacle)
+        cue_obstacle,_=check_obstacle_ball(self.positions,ballcount,self.cue,best_cue_hitpoint,cue_obstacle)
+        if cue_obstacle>0:
             return True
         return False
 
@@ -305,9 +309,9 @@ class method_choice():
             self.cue_obj_nines_angle.append(cue_obj_nine_angle)
             cue_obj_nine_obs=0
             cue_obj_obs=0
-            for j in range(self.ballcount):
-                cue_obj_nine_obs,_=check_obstacle_ball(self.positions[j],self.cue,self.obj_nines_hitpoints[i],cue_obj_nine_obs)
-                cue_obj_obs,_=check_obstacle_ball(self.positions[j],self.cue,self.obj_holes_hitpoints[i],cue_obj_obs)
+           
+            cue_obj_nine_obs,_=check_obstacle_ball(self.positions,ballcount,self.cue,self.obj_nines_hitpoints[i],cue_obj_nine_obs)
+            cue_obj_obs,_=check_obstacle_ball(self.positions,ballcount,self.cue,self.obj_holes_hitpoints[i],cue_obj_obs)
             cue_obj_nine_obstacles1.append(cue_obj_nine_obs)
             cue_obj_obs1.append(cue_obj_obs)
         for i in range(6):
@@ -357,12 +361,11 @@ class method_choice():
             for j in range(6):  # 对每个反射点进行迭代
                 temp1obj_nine_obs = 0
                 temp1_1obj_obs = 0
-                for k in range(self.ballcount):  # 对每个球的位置进行迭代
                     # 检查球与反射点的碰撞
-                    temp1obj_nine_obs, _ = check_obstacle_ball(self.positions[k], self.cue, self.reflection_obj_nine_points[i][j], temp1obj_nine_obs)
-                    temp1obj_nine_obs, _ = check_obstacle_ball(self.positions[k], self.reflection_obj_nine_points[i][j], self.obj_nines_hitpoints[j], temp1obj_nine_obs)
-                    temp1_1obj_obs, _ = check_obstacle_ball(self.positions[k], self.cue, self.reflection_obj_points[i][j], temp1_1obj_obs)
-                    temp1_1obj_obs, _ = check_obstacle_ball(self.positions[k], self.reflection_obj_points[i][j], self.obj_holes_hitpoints[j], temp1_1obj_obs)
+                temp1obj_nine_obs, _ = check_obstacle_ball(self.positions,ballcount, self.cue, self.reflection_obj_nine_points[i][j], temp1obj_nine_obs)
+                temp1obj_nine_obs, _ = check_obstacle_ball(self.positions,ballcount, self.reflection_obj_nine_points[i][j], self.obj_nines_hitpoints[j], temp1obj_nine_obs)
+                temp1_1obj_obs, _ = check_obstacle_ball(self.positions,ballcount, self.cue, self.reflection_obj_points[i][j], temp1_1obj_obs)
+                temp1_1obj_obs, _ = check_obstacle_ball(self.positions,ballcount, self.reflection_obj_points[i][j], self.obj_holes_hitpoints[j], temp1_1obj_obs)
                 
                 # 将检测结果存储到临时列表中
                 temp2obj_nine_obs.append(temp1obj_nine_obs)
@@ -393,7 +396,7 @@ class method_choice():
             return method_choice.method2(self)
         else:
             return method_choice.method3(self)
-        
+        # return method_choice.method3_2(self)
         
     def method1_1(self):
         route=1.1
@@ -404,11 +407,8 @@ class method_choice():
         #--------obs----------#
         for i in range(6):
             temp1obs=0
-
-            for j in range(self.ballcount-1):
-
-                temp1obs,_=check_obstacle_ball(self.positions[j],self.obj,self.obj_nines_hitpoints[i],temp1obs)
-                temp1obs,_=check_obstacle_ball(self.positions[j],self.nine,self.nine_holes_hitpoints[i],temp1obs)
+            temp1obs,_=check_obstacle_ball(self.positions,ballcount,self.obj,self.obj_nines_hitpoints[i],temp1obs)
+            temp1obs,_=check_obstacle_ball(self.positions,ballcount,self.nine,self.nine_holes_hitpoints[i],temp1obs)
             obj_nine_hole_obs.append(temp1obs)
             if temp1obs==0:
                 method1_1=True
@@ -486,10 +486,9 @@ class method_choice():
             temp2obs=[]
             for j in range(6):
                 temp1obs=0
-                for k in range(self.ballcount):
-                    temp1obs,_=check_obstacle_ball(self.positions[k],self.cue,self.obj_nines_hitpoints[j],temp1obs)
-                    temp1obs,_=check_obstacle_ball(self.positions[k],self.obj,reflection_obj_nine_points[i][j],temp1obs)
-                    temp1obs,_=check_obstacle_ball(self.positions[k],reflection_obj_nine_points[i][j],self.nine,temp1obs)
+                temp1obs,_=check_obstacle_ball(self.positions,ballcount,self.cue,self.obj_nines_hitpoints[j],temp1obs)
+                temp1obs,_=check_obstacle_ball(self.positions,ballcount,self.obj,reflection_obj_nine_points[i][j],temp1obs)
+                temp1obs,_=check_obstacle_ball(self.positions,ballcount,reflection_obj_nine_points[i][j],self.nine,temp1obs)
                 temp2obs.append(temp1obs)
             method1_2obs.append(temp2obs)
         #----------obs、angle----------------------#
@@ -573,9 +572,8 @@ class method_choice():
             cue_obj_holes_angle.append(cue_obj_hole_angle)
         for i in range(6):
             temp1obj_hole_obs=0
-            for j in range(self.ballcount):
-                temp1obj_hole_obs,_=check_obstacle_ball(self.positions[j],self.cue,self.obj_holes_hitpoints[i],temp1obj_hole_obs)
-                temp1obj_hole_obs,_=check_obstacle_ball(self.positions[j],self.obj,vir_hole_positions[i],temp1obj_hole_obs)
+            temp1obj_hole_obs,_=check_obstacle_ball(self.positions,ballcount,self.cue,self.obj_holes_hitpoints[i],temp1obj_hole_obs)
+            temp1obj_hole_obs,_=check_obstacle_ball(self.positions,ballcount,self.obj,vir_hole_positions[i],temp1obj_hole_obs)
             obj_holes_obs.append(temp1obj_hole_obs)
             #--------------distance,score----------------#
         method1_judge=False
@@ -617,10 +615,9 @@ class method_choice():
         obj_nine_holes_angles=[]
         for i in range(6):
             temp1obj_nine_obs=0
-            for k in range(self.ballcount):
-                temp1obj_nine_obs,_=check_obstacle_ball(self.positions[k],self.cue,self.obj_nines_hitpoints[i],temp1obj_nine_obs)
-                temp1obj_nine_obs,_=check_obstacle_ball(self.positions[k],self.obj,self.nine_holes_hitpoints[i],temp1obj_nine_obs)
-                temp1obj_nine_obs,_=check_obstacle_ball(self.positions[k],self.nine,vir_hole_positions[i],temp1obj_nine_obs)
+            temp1obj_nine_obs,_=check_obstacle_ball(self.positions,ballcount,self.cue,self.obj_nines_hitpoints[i],temp1obj_nine_obs)
+            temp1obj_nine_obs,_=check_obstacle_ball(self.positions,ballcount,self.obj,self.nine_holes_hitpoints[i],temp1obj_nine_obs)
+            temp1obj_nine_obs,_=check_obstacle_ball(self.positions,ballcount,self.nine,vir_hole_positions[i],temp1obj_nine_obs)
             obj_nines_obs.append(temp1obj_nine_obs)
         cue_obj_nine_reflec_diss=[]
         method2_1scores=[]
@@ -682,19 +679,24 @@ class method_choice():
         print(route)
         #-------------------#
         obj_holes_obs=[]
-        cue_obj_holes_angle=[]
+        obj_holes_angle=[]
         method2_scores=[]
+        cue_obj_angle=[]
         hit_vectors=[]
         cue_relfec_obj_hole_diss=[]
         method2=False
         #------------------obs,angle--------------------#
         for j in range(4):
-            temp2cue_obj_holes_angle=[]
+            temp2obj_holes_angle=[]
+            temp2cue_obj_angle=[]
             for i in range(6):
-                temp1cue_obj_hole_angle=vector_angle(self.reflection_obj_points[j][i],self.obj_holes_hitpoints[i],vir_hole_positions[i])
-                temp2cue_obj_holes_angle.append(temp1cue_obj_hole_angle)
-            cue_obj_holes_angle.append(temp2cue_obj_holes_angle)
-        print("method2",cue_obj_holes_angle)
+                temp1cue_obj_angle=vector_angle(self.cue,self.reflection_obj_points[j][i],self.obj)
+                temp1obj_hole_angle=vector_angle(self.reflection_obj_points[j][i],self.obj_holes_hitpoints[i],vir_hole_positions[i])
+                temp2obj_holes_angle.append(temp1obj_hole_angle)
+                temp2cue_obj_angle.append(temp1cue_obj_angle)
+            obj_holes_angle.append(temp2obj_holes_angle)
+            cue_obj_angle.append(temp2cue_obj_angle)
+        print("method2",obj_holes_angle)
         #------------------distance,score--------#
         cue_relfec_obj_hole_diss2=[]
         for i in range(4):
@@ -711,17 +713,16 @@ class method_choice():
         for i in range(4):
             for k in range(6):
                 temp1obs=0
-                for j in range(self.ballcount):
-                    temp1obs,_=check_obstacle_ball(self.positions[j],self.cue,self.reflection_obj_points[i][k],temp1obs)
-                    temp1obs,_=check_obstacle_ball(self.positions[j],self.reflection_obj_points[i][k],self.obj,temp1obs)
-                    temp1obs,_=check_obstacle_ball(self.positions[j],self.obj,vir_hole_positions[k],temp1obs)
+                temp1obs,_=check_obstacle_ball(self.positions,ballcount,self.cue,self.reflection_obj_points[i][k],temp1obs)
+                temp1obs,_=check_obstacle_ball(self.positions,ballcount,self.reflection_obj_points[i][k],self.obj,temp1obs)
+                temp1obs,_=check_obstacle_ball(self.positions,ballcount,self.obj,vir_hole_positions[k],temp1obs)
                 obj_holes_obs.append(temp1obs)
         method2=False
         method2_scores2=[]
         for i in range(4):
             method2_scores=[]
             for j in range(6):
-                method2_score=cal_score(cue_relfec_obj_hole_diss2[i][j],obj_holes_obs[j],cue_obj_holes_angle[i][j],-1,1)
+                method2_score=cal_score(cue_relfec_obj_hole_diss2[i][j],obj_holes_obs[j],obj_holes_angle[i][j],cue_obj_angle[i][j],2)
                 method2_scores.append(method2_score)
             method2_scores2.append(method2_scores)
         max_non_positive_score,best_index1,best_index2=find_min_negative_integer_in_nested_list(method2_scores2)
@@ -753,7 +754,7 @@ class method_choice():
         method3angle=[]
         method3_1angle=[]
         method3vector=[]
-        for i in range(1,self.ballcount-1):
+        for i in range(self.ballcount):
             temp2obs=[]
             temp2dis=[]
             temp2angle=[]
@@ -763,17 +764,17 @@ class method_choice():
                 temp1dis,temp1vector=distance_and_vector(self.cue,self.others_hitpoints[i][j])
                 temp1_1dis,_=distance_and_vector(self.obj,self.cue_obj_others_hitpoints[i][j])
                 temp1_2dis,_=distance_and_vector(self.positions[i],vir_hole_positions[j])
-                temp2dis.append(temp1_1dis+temp1_2dis+temp1dis)
+                tempsum=temp1_1dis+temp1_2dis+temp1dis
+                temp2dis.append(tempsum)
                 temp1angle=vector_angle(self.cue,self.cue_obj_others_hitpoints[i][j],self.others_hitpoints[i][j])
                 temp1_1angle=vector_angle(self.cue_obj_others_hitpoints[i][j],self.others_hitpoints[i][j],vir_hole_positions[j])
                 temp2_1angle.append(temp1_1angle)
                 temp2angle.append(temp1angle)
                 temp1obs=0
-                for k in range(self.ballcount):
-                    temp1obs,_=check_obstacle_ball(self.positions[k],self.cue,self.cue_obj_others_hitpoints[i][j],temp1obs)
-                    temp1obs,_=check_obstacle_ball(self.positions[k],self.obj,self.others_hitpoints[i][j],temp1obs)
-                    temp1obs,_=check_obstacle_ball(self.positions[k],self.positions[i],vir_hole_positions[j],temp1obs)
-                if temp1obs==0:
+                temp1obs,_=check_obstacle_ball(self.positions,ballcount,self.cue,self.cue_obj_others_hitpoints[i][j],temp1obs)
+                temp1obs,_=check_obstacle_ball(self.positions,ballcount,self.obj,self.others_hitpoints[i][j],temp1obs)
+                temp1obs,_=check_obstacle_ball(self.positions,ballcount,self.positions[i],vir_hole_positions[j],temp1obs)
+                if temp1obs==0: 
                     method3_judge=True
                 temp2obs.append(temp1obs)
                 temp2vector.append(temp1vector)
@@ -781,7 +782,7 @@ class method_choice():
             method3angle.append(temp2angle)
             method3obs.append(temp2obs)
             method3dis.append(temp2dis)
-            method3_1angle.append(temp1_1angle)
+            method3_1angle.append(temp2_1angle)
         print("obs3",method3obs)
         print("dis3",method3dis)
         print("angle",method3angle)
@@ -790,7 +791,7 @@ class method_choice():
         method3socre=[]
         temp1score_negative=[]
         method3_judge=False
-        for i in range(0,self.ballcount-2):
+        for i in range(self.ballcount):
             temp2socre=[]
             for j in range(6):
                 temp1score=cal_score(method3dis[i][j],method3obs[i][j],method3angle[i][j],method3_1angle[i][j],2)
@@ -809,12 +810,6 @@ class method_choice():
             best_hit_vector = method3vector[best_index1][best_index2]
             routeobs = method3obs[best_index1][best_index2]
             hitcuepoint = calculate_aim_point(self.cue,first_hitpoint, radius/2)
-            finalobs=[]
-            countobs = 0
-            # for i in range(self.ballcount):
-            #     countobs, px, py = point_to_line_distance(self.positions[i],self.obj)
-            #     if px > 0:
-            #         finalobs.append((px,py))
             cue_obstacle=method_choice.edge_detect(self,hitcuepoint)
             #----------screen-----------#
             around_cue_hitpoint_detect=method_choice.edge_detect(self,hitcuepoint)
@@ -840,8 +835,8 @@ class method_choice():
             temp2=[]
             for j in range(6):
                 temp1=0
-                for k in range(self.ballcount-1):
-                    temp1,_=check_obstacle_ball(self.positions[j],self.cue,self.cue_obj_others_hitpoints[i][j],temp1)
+                
+                temp1,_=check_obstacle_ball(self.positions,ballcount,self.cue,self.cue_obj_others_hitpoints[i][j],temp1)
                 temp2.append(temp1)
                 if temp1==0:
                     method3_2=True
@@ -884,11 +879,10 @@ class method_choice():
                     temp2dis.append(temp_dis_sum)
                     temp2vector.append(temp1vector)
                     temp1obs=0
-                    for k in range(self.ballcount-1):
-                        temp1obs,_=check_obstacle_ball(self.positions[k],self.cue,method3_2_reflection_point[i][j],temp1obs)
-                        temp1obs,_=check_obstacle_ball(self.positions[k],method3_2_reflection_point[i][j],self.others_hitpoints[i][j],temp1obs)
-                        temp1obs,_=check_obstacle_ball(self.positions[k],self.obj,self.cue_obj_others_hitpoints[i][j],temp1obs)
-                        temp1obs,_=check_obstacle_ball(self.positions[k],self.positions[i],vir_hole_positions[j],temp1obs)
+                    temp1obs,_=check_obstacle_ball(self.positions,ballcount,self.cue,method3_2_reflection_point[i][j],temp1obs)
+                    temp1obs,_=check_obstacle_ball(self.positions,ballcount,method3_2_reflection_point[i][j],self.others_hitpoints[i][j],temp1obs)
+                    temp1obs,_=check_obstacle_ball(self.positions,ballcount,self.obj,self.cue_obj_others_hitpoints[i][j],temp1obs)
+                    temp1obs,_=check_obstacle_ball(self.positions,ballcount,self.positions[i],vir_hole_positions[j],temp1obs)
                     temp2obs.append(temp1obs)
                     # if temp1obs==0:
                     #     method3_2_judge=True
@@ -913,7 +907,7 @@ class method_choice():
                         method3_2_judge=True
                     temp2score.append(temp1score)
                 method3_2score.append(temp2score)
-            
+            print("method3_2_vector",method3_2_vector)
             if method3_2_judge==True:
                 print("3.2",True)
                 max_non_positive_score,best_index1,best_index2=find_min_negative_integer_in_nested_list(method3_2score)
@@ -924,10 +918,9 @@ class method_choice():
                 second_hitpoint = self.others_hitpoints[best_index1][best_index2]
                 third_ball=self.positions[best_index1]
                 best_cue_hitpoint=calculate_aim_point(self.cue,reflection_point,radius/2)
-                best_hit_vector = method3_2_vector[best_index2]
+                best_hit_vector = method3_2_vector[best_index1][best_index2]
                 routeobs = method3_2_obs[best_index2]
                 around_cue_hitpoint_detect=method_choice.edge_detect(self,best_cue_hitpoint)
-                
                 plt.plot(best_cue_hitpoint[0],best_cue_hitpoint[1],marker='o',ms=3,color='red')
                 plt.plot([self.cue[0],reflection_point[0]],[self.cue[1],reflection_point[1]],linestyle='-',color='red')
                 plt.plot([reflection_point[0],first_hitpoint[0]],[reflection_point[1],first_hitpoint[1]],linestyle='-',color='red')
